@@ -3,264 +3,400 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>塗色遊戲</title>
+<title>Canvas 繪圖工具 RWD 修正版</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:Arial,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;overflow-x:hidden;}
-.container{display:flex;flex-direction:column;min-height:100vh;padding:10px;}
-.header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:15px;background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border-radius:15px;padding:15px;}
-.upload-section{display:flex;align-items:center;gap:10px;}
-.file-input-wrapper{position:relative;overflow:hidden;display:inline-block;background:#4CAF50;color:white;padding:10px 20px;border-radius:25px;cursor:pointer;font-size:14px;transition:all 0.3s;}
-.file-input-wrapper:hover{background:#45a049;transform:translateY(-2px);}
-.file-input-wrapper input[type=file]{position:absolute;left:-9999px;}
-.demo-btn{background:#FF6B6B;color:white;border:none;padding:10px 20px;border-radius:25px;cursor:pointer;font-size:14px;transition:all 0.3s;}
-.demo-btn:hover{background:#ff5252;transform:translateY(-2px);}
-.controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.control-group{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.2);padding:8px 12px;border-radius:20px;}
-.brush-size-slider{width:100px;height:5px;border-radius:5px;background:#ddd;outline:none;-webkit-appearance:none;}
-.brush-size-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:50%;background:#4CAF50;cursor:pointer;}
-.brush-preview{width:40px;height:40px;border-radius:50%;background:#333;border:2px solid white;display:flex;align-items:center;justify-content:center;}
-.brush-dot{border-radius:50%;background:currentColor;transition:all 0.3s;}
-.action-btn{background:rgba(255,255,255,0.2);border:none;color:white;padding:10px 15px;border-radius:20px;cursor:pointer;transition:all 0.3s;font-size:14px;}
-.action-btn:hover{background:rgba(255,255,255,0.3);transform:translateY(-2px);}
-.action-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
-.clear-btn{background:#ff6b6b;}
-.clear-btn:hover{background:#ff5252;}
-.main-content{flex:1;display:flex;gap:15px;min-height:0;}
-.color-palette{background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border-radius:20px;padding:20px;width:280px;max-height:fit-content;}
-.palette-title{color:white;text-align:center;margin-bottom:15px;font-size:18px;font-weight:bold;}
-.color-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:20px;}
-.color-item{width:35px;height:35px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:all 0.3s;position:relative;}
-.color-item:hover{transform:scale(1.1);box-shadow:0 4px 15px rgba(0,0,0,0.3);}
-.color-item.selected{border-color:white;transform:scale(1.2);box-shadow:0 0 20px rgba(255,255,255,0.8);}
-.eraser{background:linear-gradient(45deg,#ff6b6b,#ee5a24);display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:12px;}
-.canvas-container{flex:1;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border-radius:20px;padding:20px;position:relative;overflow:hidden;}
-.canvas-wrapper{position:relative;max-width:100%;max-height:100%;border-radius:15px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.3);}
-canvas{display:block;position:absolute;top:0;left:0;}
-.placeholder{color:rgba(255,255,255,0.7);text-align:center;font-size:18px;padding:40px;}
-@media(max-width:768px){.container{padding:5px;}.header{flex-direction:column;align-items:stretch;gap:15px;}.upload-section{justify-content:center;}.controls{justify-content:center;flex-wrap:wrap;}.main-content{flex-direction:column;gap:10px;}.color-palette{width:100%;order:2;}.canvas-container{order:1;min-height:60vh;}.color-grid{grid-template-columns:repeat(9,1fr);gap:6px;}.color-item{width:30px;height:30px;}.brush-size-control{flex:1;justify-content:center;}}
+  body { margin:0; font-family: Arial, sans-serif; text-align:center; background:#f0f0f0;}
+  .controls { margin:10px; display:flex; flex-wrap:wrap; justify-content:center; gap:5px; }
+  .color-btn { width:30px; height:30px; display:inline-block; cursor:pointer; border:1px solid #ccc; }
+  #canvasContainer { position: relative; margin:auto; max-width: 100%; }
+  canvas { border:1px solid black; position:absolute; top:0; left:0; touch-action:none; }
+  .upload-section { margin: 10px; padding: 10px; background: white; border-radius: 5px; }
+  .upload-btn { margin: 5px; padding: 8px 15px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
+  .upload-btn:hover { background: #45a049; }
+  .upload-btn.bg { background: #2196F3; }
+  .upload-btn.bg:hover { background: #0b7dda; }
+  .layer-info { margin: 5px; font-size: 12px; color: #666; }
+  @media(max-width:768px) { .color-btn{width:25px;height:25px;} }
 </style>
 </head>
 <body>
-<div class="container">
-  <div class="header">
-    <div class="upload-section">
-      <div class="file-input-wrapper">
-        <input type="file" id="imageUpload" accept="image/*">
-        上傳圖片
-      </div>
-      <button class="demo-btn" id="demoBtn">載入示範圖片</button>
-    </div>
-    <div class="controls">
-      <div class="control-group brush-size-control">
-        <span style="color:white;font-size:14px;">筆刷:</span>
-        <input type="range" id="brushSize" class="brush-size-slider" min="1" max="50" value="5">
-        <div class="brush-preview">
-          <div class="brush-dot" id="brushPreview"></div>
-        </div>
-      </div>
-      <button class="action-btn" id="undoBtn" disabled>↶ 復原</button>
-      <button class="action-btn" id="redoBtn" disabled>↷ 重做</button>
-      <button class="action-btn clear-btn" id="clearBtn">🗑️ 清空</button>
-      <button class="action-btn" id="downloadBtn">⬇️ 下載</button>
-    </div>
-  </div>
-  <div class="main-content">
-    <div class="color-palette">
-      <div class="palette-title">選擇顏色</div>
-      <div class="color-grid" id="colorGrid"></div>
-    </div>
-    <div class="canvas-container">
-      <div class="canvas-wrapper" id="canvasWrapper">
-        <div class="placeholder">請上傳圖片或點擊「載入示範圖片」開始塗色</div>
-      </div>
-    </div>
-  </div>
+
+<h2>Canvas 繪圖工具</h2>
+
+<div class="upload-section">
+  <div class="layer-info">圖層順序：背景圖 → 畫筆繪圖 → 去背圖（最上層）</div>
+  <input type="file" id="uploadBg" accept="image/*" style="display:none" onchange="uploadBackgroundImage(event)">
+  <button class="upload-btn bg" onclick="document.getElementById('uploadBg').click()">上傳背景圖</button>
+  
+  <input type="file" id="uploadOverlay" accept="image/*" style="display:none" onchange="uploadOverlayImage(event)">
+  <button class="upload-btn" onclick="document.getElementById('uploadOverlay').click()">上傳去背圖（推薦PNG）</button>
+  
+  <button class="upload-btn" onclick="clearBackground()">清除背景</button>
+  <button class="upload-btn" onclick="clearOverlay()">清除去背圖</button>
+</div>
+
+<div class="controls" id="colorPalette"></div>
+<div class="controls">
+  <button onclick="setEraser()">橡皮擦</button>
+  <label>粗細：<input type="range" id="lineWidth" min="1" max="20" value="3" onchange="changeLineWidth(this.value)"></label>
+  <button onclick="undo()">復原</button>
+  <button onclick="redo()">重做</button>
+  <button onclick="clearDraw()">清除畫筆</button>
+  <button onclick="downloadCanvas()">下載合成圖</button>
+</div>
+
+<div id="canvasContainer">
+  <canvas id="bgCanvas"></canvas>
+  <canvas id="drawCanvas"></canvas>
+  <canvas id="overlayCanvas"></canvas>
 </div>
 
 <script>
-class ColoringGame {
-  constructor() {
-    this.baseCanvas=null; // 圖片底層
-    this.drawCanvas=null; // 畫筆層
-    this.ctx=null;
-    this.isDrawing=false;
-    this.currentColor='#FF6B6B';
-    this.currentSize=5;
-    this.history=[];
-    this.historyStep=-1;
-    this.isEraser=false;
-    this.img=null;
+const bgCanvas = document.getElementById("bgCanvas");
+const drawCanvas = document.getElementById("drawCanvas");
+const overlayCanvas = document.getElementById("overlayCanvas");
 
-    this.initializeColors();
-    this.bindEvents();
-    this.updateBrushPreview();
-  }
+const bgCtx = bgCanvas.getContext("2d");
+const ctx = drawCanvas.getContext("2d");
+const overlayCtx = overlayCanvas.getContext("2d");
 
-  initializeColors(){
-    const colors=[
-      '#FF6B6B','#FF8E53','#FF6B9D','#C44569','#F8B500','#FD79A8',
-      '#6C5CE7','#A29BFE','#74B9FF','#0984E3','#00B894','#00CEC9',
-      '#55A3FF','#26A69A','#66BB6A','#8BC34A','#CDDC39','#FFEB3B',
-      '#FFC107','#FF9800','#FF5722','#795548','#9E9E9E','#607D8B',
-      '#E91E63','#9C27B0','#673AB7','#3F51B5','#2196F3','#03A9F4',
-      '#00BCD4','#009688','#4CAF50','#FFFF00','#FF0000','#000000'
-    ];
-    const colorGrid=document.getElementById('colorGrid');
-    colorGrid.innerHTML='';
-    colors.forEach((color,index)=>{
-      const colorItem=document.createElement('div');
-      colorItem.className='color-item';
-      colorItem.style.backgroundColor=color;
-      colorItem.dataset.color=color;
-      if(index===0) colorItem.classList.add('selected');
-      colorItem.addEventListener('click',()=>this.selectColor(color,colorItem));
-      colorGrid.appendChild(colorItem);
-    });
-    const eraser=document.createElement('div');
-    eraser.className='color-item eraser';
-    eraser.textContent='擦';
-    eraser.addEventListener('click',()=>this.selectEraser(eraser));
-    colorGrid.appendChild(eraser);
-  }
+let drawing = false;
+let currentColor = "black";
+let lineWidth = 3;
+let isEraser = false;
+let history = [];
+let redoHistory = [];
+let lastPos = {x:0,y:0};
+let bgImage = null;
+let overlayImage = null;
 
-  selectColor(color,element){
-    this.currentColor=color; this.isEraser=false;
-    this.updateSelectedColor(element); this.updateBrushPreview();
-  }
+// RWD
+function resizeCanvas(){
+  const container = document.getElementById("canvasContainer");
+  const width = Math.min(window.innerWidth-20,600);
+  const height = Math.min(window.innerHeight-200,400);
+  [bgCanvas, drawCanvas, overlayCanvas].forEach(c=>{
+    c.width = width;
+    c.height = height;
+  });
+  redrawBackground();
+  redrawDrawLayer();
+  redrawOverlay();
+}
+window.addEventListener('resize', resizeCanvas);
 
-  selectEraser(element){
-    this.isEraser=true; this.updateSelectedColor(element); this.updateBrushPreview();
-  }
-
-  updateSelectedColor(selectedElement){
-    document.querySelectorAll('.color-item').forEach(item=>item.classList.remove('selected'));
-    selectedElement.classList.add('selected');
-  }
-
-  updateBrushPreview(){
-    const preview=document.getElementById('brushPreview');
-    if(preview){
-      const size=Math.min(this.currentSize,30);
-      preview.style.width=size+'px';
-      preview.style.height=size+'px';
-      preview.style.backgroundColor=this.isEraser?'#ff6b6b':this.currentColor;
-    }
-  }
-
-  bindEvents(){
-    document.getElementById('imageUpload').addEventListener('change',e=>this.handleImageUpload(e));
-    document.getElementById('demoBtn').addEventListener('click',()=>this.loadDemoImage());
-    document.getElementById('brushSize').addEventListener('input',e=>{this.currentSize=parseInt(e.target.value); this.updateBrushPreview();});
-    document.getElementById('undoBtn').addEventListener('click',()=>this.undo());
-    document.getElementById('redoBtn').addEventListener('click',()=>this.redo());
-    document.getElementById('clearBtn').addEventListener('click',()=>this.clearCanvas());
-    document.getElementById('downloadBtn').addEventListener('click',()=>this.downloadCanvas());
-  }
-
-  handleImageUpload(event){
-    const file=event.target.files[0];
-    if(!file) return;
-    if(!file.type.startsWith('image/')){alert('請選擇圖片檔案！');return;}
-    const reader=new FileReader();
-    reader.onload=e=>{
-      const img=new Image();
-      img.onload=()=>{this.img=img; this.setupCanvas(img);};
-      img.src=e.target.result;
-    };
-    reader.readAsDataURL(file);
-  }
-
-  loadDemoImage(){
-    const canvas=document.createElement('canvas');
-    canvas.width=400; canvas.height=400;
-    const ctx=canvas.getContext('2d');
-    ctx.fillStyle='white'; ctx.fillRect(0,0,400,400);
-    ctx.strokeStyle='black'; ctx.lineWidth=3; ctx.fillStyle='white';
-    for(let i=0;i<6;i++){
-      const angle=(i*Math.PI)/3;
-      ctx.beginPath(); ctx.ellipse(200+Math.cos(angle)*40,200+Math.sin(angle)*40,30,15,angle,0,2*Math.PI);
-      ctx.fill(); ctx.stroke();
-    }
-    ctx.beginPath(); ctx.arc(200,200,25,0,2*Math.PI); ctx.fill(); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(200,225); ctx.lineTo(200,350); ctx.lineWidth=5; ctx.stroke();
-    ctx.beginPath(); ctx.ellipse(180,280,20,8,-Math.PI/4,0,2*Math.PI); ctx.fill(); ctx.stroke();
-    ctx.beginPath(); ctx.ellipse(220,300,20,8,Math.PI/4,0,2*Math.PI); ctx.fill(); ctx.stroke();
-    const img=new Image();
-    img.onload=()=>{this.img=img; this.setupCanvas(img);};
-    img.src=canvas.toDataURL();
-  }
-
-  setupCanvas(img){
-    const wrapper=document.getElementById('canvasWrapper');
-    const rect=wrapper.getBoundingClientRect();
-    let w=rect.width-40, h=rect.height-40;
-    const imgRatio=img.width/img.height;
-    const containerRatio=w/h;
-    if(imgRatio>containerRatio){w=Math.min(w,img.width); h=w/imgRatio;}
-    else{h=Math.min(h,img.height); w=h*imgRatio;}
-
-    wrapper.innerHTML='';
-    // 底層 canvas
-    this.baseCanvas=document.createElement('canvas');
-    this.baseCanvas.width=w; this.baseCanvas.height=h;
-    this.baseCanvas.style.zIndex=0;
-    this.baseCanvas.getContext('2d').drawImage(img,0,0,w,h);
-    wrapper.appendChild(this.baseCanvas);
-
-    // 上層 canvas
-    this.drawCanvas=document.createElement('canvas');
-    this.drawCanvas.width=w; this.drawCanvas.height=h;
-    this.drawCanvas.style.zIndex=1;
-    wrapper.appendChild(this.drawCanvas);
-    this.ctx=this.drawCanvas.getContext('2d');
-    this.ctx.lineCap='round'; this.ctx.lineJoin='round';
-    this.bindCanvasEvents();
-    this.saveState();
-  }
-
-  bindCanvasEvents(){
-    if(!this.drawCanvas) return;
-    const getPos=e=>{
-      const rect=this.drawCanvas.getBoundingClientRect();
-      const scaleX=this.drawCanvas.width/rect.width;
-      const scaleY=this.drawCanvas.height/rect.height;
-      return{x:(e.clientX-rect.left)*scaleX,y:(e.clientY-rect.top)*scaleY};
-    };
-    this.drawCanvas.addEventListener('mousedown',e=>{this.isDrawing=true; const pos=getPos(e); this.ctx.beginPath(); this.ctx.moveTo(pos.x,pos.y);});
-    this.drawCanvas.addEventListener('mousemove',e=>{if(!this.isDrawing) return; const pos=getPos(e); this.draw(pos);});
-    this.drawCanvas.addEventListener('mouseup',()=>{if(this.isDrawing){this.isDrawing=false; this.saveState();}});
-    this.drawCanvas.addEventListener('mouseout',()=>{if(this.isDrawing){this.isDrawing=false; this.saveState();}});
-    this.drawCanvas.addEventListener('touchstart',e=>{e.preventDefault();const t=e.touches[0];this.isDrawing=true;const pos=getPos(t); this.ctx.beginPath(); this.ctx.moveTo(pos.x,pos.y);});
-    this.drawCanvas.addEventListener('touchmove',e=>{e.preventDefault();if(!this.isDrawing) return;const t=e.touches[0];const pos=getPos(t); this.draw(pos);});
-    this.drawCanvas.addEventListener('touchend',e=>{e.preventDefault();if(this.isDrawing){this.isDrawing=false;this.saveState();}});
-  }
-
-  draw(pos){
-    this.ctx.strokeStyle=this.isEraser?'rgba(255,255,255,1)':this.currentColor;
-    this.ctx.lineWidth=this.currentSize;
-    this.ctx.globalCompositeOperation=this.isEraser?'destination-out':'source-over';
-    this.ctx.lineTo(pos.x,pos.y);
-    this.ctx.stroke();
-  }
-
-  saveState(){
-    if(!this.drawCanvas) return;
-    this.history=this.history.slice(0,this.historyStep+1);
-    this.history.push(this.drawCanvas.toDataURL());
-    this.historyStep++;
-    this.updateUndoRedoButtons();
-  }
-
-  undo(){if(this.historyStep>0){this.historyStep--; this.restoreState(this.history[this.historyStep]); this.updateUndoRedoButtons();}}
-  redo(){if(this.historyStep<this.history.length-1){this.historyStep++; this.restoreState(this.history[this.historyStep]); this.updateUndoRedoButtons();}}
-  restoreState(dataURL){const img=new Image(); img.onload=()=>{this.ctx.clearRect(0,0,this.drawCanvas.width,this.drawCanvas.height); this.ctx.drawImage(img,0,0);}; img.src=dataURL;}
-  updateUndoRedoButtons(){document.getElementById('undoBtn').disabled=this.historyStep<=0; document.getElementById('redoBtn').disabled=this.historyStep>=this.history.length-1;}
-  clearCanvas(){if(!this.drawCanvas) return; this.ctx.clearRect(0,0,this.drawCanvas.width,this.drawCanvas.height); this.saveState();}
-  downloadCanvas(){if(!this.drawCanvas||!this.baseCanvas) return; const link=document.createElement('a'); const mergeCanvas=document.createElement('canvas'); mergeCanvas.width=this.baseCanvas.width; mergeCanvas.height=this.baseCanvas.height; const mctx=mergeCanvas.getContext('2d'); mctx.drawImage(this.baseCanvas,0,0); mctx.drawImage(this.drawCanvas,0,0); link.download='coloring.png'; link.href=mergeCanvas.toDataURL('image/png'); link.click();}
+// 觸控與滑鼠事件
+function getPos(e){
+  const rect = drawCanvas.getBoundingClientRect();
+  let clientX, clientY;
+  if(e.touches){ clientX=e.touches[0].clientX; clientY=e.touches[0].clientY;}
+  else{ clientX=e.clientX; clientY=e.clientY;}
+  return { x:(clientX-rect.left)*(drawCanvas.width/rect.width),
+           y:(clientY-rect.top)*(drawCanvas.height/rect.height)};
 }
 
-window.addEventListener('DOMContentLoaded',()=>{new ColoringGame();});
+function startDraw(e){
+  e.preventDefault();
+  drawing = true;
+  lastPos = getPos(e);
+  ctx.beginPath();
+  ctx.moveTo(lastPos.x,lastPos.y);
+}
+
+function draw(e){
+  if(!drawing) return;
+  const pos = getPos(e);
+  ctx.lineWidth = lineWidth;
+  ctx.lineCap = "round";
+  ctx.strokeStyle = currentColor;
+  ctx.globalCompositeOperation = isEraser ? 'destination-out' : 'source-over';
+  ctx.beginPath();
+  ctx.moveTo(lastPos.x,lastPos.y);
+  ctx.lineTo(pos.x,pos.y);
+  ctx.stroke();
+  lastPos = pos;
+}
+
+function stopDraw(){
+  if(!drawing) return;
+  drawing=false;
+  ctx.closePath();
+  saveHistory();
+}
+
+// 事件監聽器綁定到繪圖層，但確保不會影響到覆蓋層
+drawCanvas.addEventListener("mousedown", startDraw);
+drawCanvas.addEventListener("mousemove", draw);
+drawCanvas.addEventListener("mouseup", stopDraw);
+drawCanvas.addEventListener("mouseout", stopDraw);
+drawCanvas.addEventListener("touchstart", startDraw, {passive:false});
+drawCanvas.addEventListener("touchmove", draw, {passive:false});
+drawCanvas.addEventListener("touchend", stopDraw, {passive:false});
+
+// 也在覆蓋層上添加事件監聽器，讓去背圖上也能繪圖
+overlayCanvas.addEventListener("mousedown", startDraw);
+overlayCanvas.addEventListener("mousemove", draw);
+overlayCanvas.addEventListener("mouseup", stopDraw);
+overlayCanvas.addEventListener("mouseout", stopDraw);
+overlayCanvas.addEventListener("touchstart", startDraw, {passive:false});
+overlayCanvas.addEventListener("touchmove", draw, {passive:false});
+overlayCanvas.addEventListener("touchend", stopDraw, {passive:false});
+
+// 顏色與橡皮擦
+function setColor(color){ currentColor=color; isEraser=false; }
+function setEraser(){ isEraser=true; }
+
+// 粗細
+function changeLineWidth(value){ lineWidth=value; }
+
+// 清除畫筆層
+function clearDraw(){
+  ctx.clearRect(0,0,drawCanvas.width,drawCanvas.height);
+  saveHistory();
+}
+
+// 歷史紀錄
+function saveHistory(){
+  const imgData = drawCanvas.toDataURL();
+  history.push(imgData);
+  redoHistory = [];
+  if(history.length > 50) history.shift(); // 限制歷史記錄數量
+}
+
+// 復原
+function undo(){
+  if(history.length>1){
+    redoHistory.push(history.pop());
+    const img = new Image();
+    img.src = history[history.length-1];
+    img.onload = ()=>{
+      ctx.clearRect(0,0,drawCanvas.width,drawCanvas.height);
+      ctx.drawImage(img,0,0,drawCanvas.width,drawCanvas.height);
+    }
+  }
+}
+
+// 重做
+function redo(){
+  if(redoHistory.length>0){
+    const imgData = redoHistory.pop();
+    const img = new Image();
+    img.src = imgData;
+    img.onload = ()=>{
+      ctx.clearRect(0,0,drawCanvas.width,drawCanvas.height);
+      ctx.drawImage(img,0,0,drawCanvas.width,drawCanvas.height);
+    }
+    history.push(imgData);
+  }
+}
+
+// 上傳背景圖片
+function uploadBackgroundImage(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  
+  // 檢查文件類型
+  if(!file.type.startsWith('image/')){
+    alert('請選擇圖片文件！');
+    event.target.value = '';
+    return;
+  }
+  
+  console.log('上傳背景圖片:', file.name, file.type, file.size);
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      console.log('背景圖片載入成功:', img.width, 'x', img.height);
+      bgImage = img;
+      redrawBackground();
+    };
+    img.onerror = function() {
+      console.error('圖片載入失敗');
+      alert('圖片載入失敗，請檢查文件格式！');
+    };
+    img.src = e.target.result;
+  };
+  reader.onerror = function() {
+    console.error('文件讀取失敗');
+    alert('文件讀取失敗！');
+  };
+  reader.readAsDataURL(file);
+  
+  // 清空輸入框
+  event.target.value = '';
+}
+
+// 上傳覆蓋圖片（去背 PNG）
+function uploadOverlayImage(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  
+  if(!file.type.startsWith('image/')){
+    alert('請上傳圖片文件（建議使用 PNG 格式以保持透明效果）！');
+    event.target.value = '';
+    return;
+  }
+  
+  console.log('上傳去背圖片:', file.name, file.type, file.size);
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      console.log('去背圖片載入成功:', img.width, 'x', img.height);
+      overlayImage = img;
+      redrawOverlay();
+    };
+    img.onerror = function() {
+      console.error('圖片載入失敗');
+      alert('圖片載入失敗，請檢查文件格式！');
+    };
+    img.src = e.target.result;
+  };
+  reader.onerror = function() {
+    console.error('文件讀取失敗');
+    alert('文件讀取失敗！');
+  };
+  reader.readAsDataURL(file);
+  
+  // 清空輸入框
+  event.target.value = '';
+}
+
+// 清除背景
+function clearBackground(){
+  bgImage = null;
+  redrawBackground();
+}
+
+// 清除覆蓋層
+function clearOverlay(){
+  overlayImage = null;
+  redrawOverlay();
+}
+
+// 重新繪製背景
+function redrawBackground(){
+  bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height);
+  
+  if(bgImage) {
+    console.log('重新繪製背景圖片');
+    // 保持寬高比，填滿畫布
+    const canvasAspect = bgCanvas.width / bgCanvas.height;
+    const imgAspect = bgImage.width / bgImage.height;
+    
+    let drawWidth, drawHeight, drawX, drawY;
+    
+    if (imgAspect > canvasAspect) {
+      // 圖片較寬，以高度為準
+      drawHeight = bgCanvas.height;
+      drawWidth = drawHeight * imgAspect;
+      drawX = (bgCanvas.width - drawWidth) / 2;
+      drawY = 0;
+    } else {
+      // 圖片較高，以寬度為準
+      drawWidth = bgCanvas.width;
+      drawHeight = drawWidth / imgAspect;
+      drawX = 0;
+      drawY = (bgCanvas.height - drawHeight) / 2;
+    }
+    
+    try {
+      bgCtx.drawImage(bgImage, drawX, drawY, drawWidth, drawHeight);
+      console.log('背景圖片繪製完成');
+    } catch(e) {
+      console.error('繪製背景圖片時發生錯誤:', e);
+      alert('繪製背景圖片時發生錯誤！');
+    }
+  } else {
+    console.log('沒有背景圖片需要繪製');
+  }
+}
+
+// 重新繪製畫筆層
+function redrawDrawLayer(){
+  if(history.length>0){
+    const img = new Image();
+    img.src = history[history.length-1];
+    img.onload = ()=>{
+      ctx.clearRect(0,0,drawCanvas.width,drawCanvas.height);
+      ctx.drawImage(img,0,0,drawCanvas.width,drawCanvas.height);
+    }
+  }else{
+    ctx.clearRect(0,0,drawCanvas.width,drawCanvas.height);
+  }
+}
+
+// 重新繪製覆蓋層（去背圖）
+function redrawOverlay(){
+  overlayCtx.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);
+  
+  if(overlayImage) {
+    console.log('重新繪製覆蓋圖片');
+    try {
+      // 保持原始尺寸和透明度
+      overlayCtx.drawImage(overlayImage, 0, 0, overlayCanvas.width, overlayCanvas.height);
+      console.log('覆蓋圖片繪製完成');
+    } catch(e) {
+      console.error('繪製覆蓋圖片時發生錯誤:', e);
+      alert('繪製覆蓋圖片時發生錯誤！');
+    }
+  } else {
+    console.log('沒有覆蓋圖片需要繪製');
+  }
+}
+
+// 下載合併圖片
+function downloadCanvas(){
+  const tempCanvas = document.createElement("canvas");
+  tempCanvas.width = drawCanvas.width;
+  tempCanvas.height = drawCanvas.height;
+  const tempCtx = tempCanvas.getContext("2d");
+  
+  // 按順序合併所有圖層
+  tempCtx.drawImage(bgCanvas,0,0);        // 背景層
+  tempCtx.drawImage(drawCanvas,0,0);      // 繪圖層
+  tempCtx.drawImage(overlayCanvas,0,0);   // 覆蓋層（去背圖）
+  
+  const link = document.createElement("a");
+  link.download = "canvas_" + new Date().getTime() + ".png";
+  link.href = tempCanvas.toDataURL("image/png");
+  link.click();
+}
+
+// 36 色調色盤
+const colors=[
+"#000000","#808080","#C0C0C0","#FFFFFF","#800000","#FF0000",
+"#808000","#FFFF00","#008000","#00FF00","#008080","#00FFFF",
+"#000080","#0000FF","#800080","#FF00FF","#A52A2A","#FFA500",
+"#B8860B","#FFD700","#2E8B57","#90EE90","#20B2AA","#40E0D0",
+"#4169E1","#87CEEB","#6A5ACD","#9370DB","#FF1493","#FF69B4",
+"#CD5C5C","#F08080","#708090","#D3D3D3","#F5F5DC","#FFE4C4"];
+
+const palette = document.getElementById("colorPalette");
+colors.forEach(c=>{
+  const btn = document.createElement("div");
+  btn.className="color-btn";
+  btn.style.backgroundColor=c;
+  btn.onclick=()=>setColor(c);
+  btn.title = c; // 顯示顏色代碼提示
+  palette.appendChild(btn);
+});
+
+// 初始化
+resizeCanvas();
+saveHistory();
+
+// 防止頁面滾動
+document.addEventListener('touchmove', function(e) {
+  if(e.target.tagName === 'CANVAS') {
+    e.preventDefault();
+  }
+}, {passive: false});
+
 </script>
+
 </body>
 </html>
