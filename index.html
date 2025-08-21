@@ -5,50 +5,194 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Canvas 繪圖工具 RWD 修正版</title>
 <style>
-  body { margin:0; font-family: Arial, sans-serif; text-align:center; background:#f0f0f0;}
-  .controls { margin:10px; display:flex; flex-wrap:wrap; justify-content:center; gap:5px; }
-  .color-btn { width:30px; height:30px; display:inline-block; cursor:pointer; border:1px solid #ccc; }
-  #canvasContainer { position: relative; margin:auto; max-width: 100%; }
-  canvas { border:1px solid black; position:absolute; top:0; left:0; touch-action:none; }
-  .upload-section { margin: 10px; padding: 10px; background: white; border-radius: 5px; }
-  .upload-btn { margin: 5px; padding: 8px 15px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
-  .upload-btn:hover { background: #45a049; }
-  .upload-btn.bg { background: #2196F3; }
-  .upload-btn.bg:hover { background: #0b7dda; }
-  .layer-info { margin: 5px; font-size: 12px; color: #666; }
-  @media(max-width:768px) { .color-btn{width:25px;height:25px;} }
+  body { 
+    margin: 0; 
+    padding: 0;
+    font-family: Arial, sans-serif; 
+    background: #f0f0f0;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  
+  .header {
+    text-align: center;
+    padding: 10px 0;
+    background: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    position: relative;
+    z-index: 10;
+  }
+  
+  .controls { 
+    margin: 10px; 
+    display: flex; 
+    flex-wrap: wrap; 
+    justify-content: center; 
+    gap: 5px; 
+  }
+  
+  .color-btn { 
+    width: 30px; 
+    height: 30px; 
+    display: inline-block; 
+    cursor: pointer; 
+    border: 1px solid #ccc; 
+    border-radius: 3px;
+  }
+  
+  .main-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 200px);
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  #canvasContainer { 
+    position: relative;
+    width: 100vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+  }
+  
+  canvas { 
+    border: 2px solid #333;
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    touch-action: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    border-radius: 5px;
+  }
+  
+  .upload-section { 
+    margin: 10px; 
+    padding: 10px; 
+    background: white; 
+    border-radius: 5px; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+  
+  .upload-btn { 
+    margin: 5px; 
+    padding: 8px 15px; 
+    background: #4CAF50; 
+    color: white; 
+    border: none; 
+    border-radius: 4px; 
+    cursor: pointer;
+    font-size: 14px;
+  }
+  
+  .upload-btn:hover { 
+    background: #45a049; 
+  }
+  
+  .upload-btn.bg { 
+    background: #2196F3; 
+  }
+  
+  .upload-btn.bg:hover { 
+    background: #0b7dda; 
+  }
+  
+  .layer-info { 
+    margin: 5px; 
+    font-size: 12px; 
+    color: #666; 
+  }
+  
+  .control-btn {
+    margin: 5px;
+    padding: 8px 12px;
+    background: #555;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  
+  .control-btn:hover {
+    background: #333;
+  }
+  
+  .slider-container {
+    display: flex;
+    align-items: center;
+    margin: 5px;
+    gap: 10px;
+  }
+  
+  .slider-container input[type="range"] {
+    width: 100px;
+  }
+  
+  @media (max-width: 768px) { 
+    .color-btn { width: 25px; height: 25px; }
+    .main-container {
+      min-height: calc(100vh - 150px);
+    }
+    .upload-btn, .control-btn {
+      font-size: 12px;
+      padding: 6px 10px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .controls {
+      margin: 5px;
+      gap: 3px;
+    }
+    .upload-section {
+      margin: 5px;
+      padding: 8px;
+    }
+  }
 </style>
 </head>
 <body>
 
-<h2>Canvas 繪圖工具</h2>
+<div class="header">
+  <h2>Canvas 繪圖工具</h2>
+  
+  <div class="upload-section">
+    <div class="layer-info">圖層順序：背景圖 → 畫筆繪圖 → 去背圖（最上層）</div>
+    <input type="file" id="uploadBg" accept="image/*" style="display:none" onchange="uploadBackgroundImage(event)">
+    <button class="upload-btn bg" onclick="document.getElementById('uploadBg').click()">上傳背景圖</button>
+    
+    <input type="file" id="uploadOverlay" accept="image/*" style="display:none" onchange="uploadOverlayImage(event)">
+    <button class="upload-btn" onclick="document.getElementById('uploadOverlay').click()">上傳去背圖（推薦PNG）</button>
+    
+    <button class="upload-btn" onclick="clearBackground()">清除背景</button>
+    <button class="upload-btn" onclick="clearOverlay()">清除去背圖</button>
+  </div>
 
-<div class="upload-section">
-  <div class="layer-info">圖層順序：背景圖 → 畫筆繪圖 → 去背圖（最上層）</div>
-  <input type="file" id="uploadBg" accept="image/*" style="display:none" onchange="uploadBackgroundImage(event)">
-  <button class="upload-btn bg" onclick="document.getElementById('uploadBg').click()">上傳背景圖</button>
-  
-  <input type="file" id="uploadOverlay" accept="image/*" style="display:none" onchange="uploadOverlayImage(event)">
-  <button class="upload-btn" onclick="document.getElementById('uploadOverlay').click()">上傳去背圖（推薦PNG）</button>
-  
-  <button class="upload-btn" onclick="clearBackground()">清除背景</button>
-  <button class="upload-btn" onclick="clearOverlay()">清除去背圖</button>
+  <div class="controls" id="colorPalette"></div>
+  <div class="controls">
+    <button class="control-btn" onclick="setEraser()">橡皮擦</button>
+    <div class="slider-container">
+      <label>粗細：</label>
+      <input type="range" id="lineWidth" min="1" max="20" value="3" onchange="changeLineWidth(this.value)">
+      <span id="lineWidthValue">3</span>
+    </div>
+    <button class="control-btn" onclick="undo()">復原</button>
+    <button class="control-btn" onclick="redo()">重做</button>
+    <button class="control-btn" onclick="clearDraw()">清除畫筆</button>
+    <button class="control-btn" onclick="downloadCanvas()">下載合成圖</button>
+  </div>
 </div>
 
-<div class="controls" id="colorPalette"></div>
-<div class="controls">
-  <button onclick="setEraser()">橡皮擦</button>
-  <label>粗細：<input type="range" id="lineWidth" min="1" max="20" value="3" onchange="changeLineWidth(this.value)"></label>
-  <button onclick="undo()">復原</button>
-  <button onclick="redo()">重做</button>
-  <button onclick="clearDraw()">清除畫筆</button>
-  <button onclick="downloadCanvas()">下載合成圖</button>
-</div>
-
-<div id="canvasContainer">
-  <canvas id="bgCanvas"></canvas>
-  <canvas id="drawCanvas"></canvas>
-  <canvas id="overlayCanvas"></canvas>
+<div class="main-container">
+  <div id="canvasContainer">
+    <canvas id="bgCanvas"></canvas>
+    <canvas id="drawCanvas"></canvas>
+    <canvas id="overlayCanvas"></canvas>
+  </div>
 </div>
 
 <script>
@@ -70,20 +214,60 @@ let lastPos = {x:0,y:0};
 let bgImage = null;
 let overlayImage = null;
 
-// RWD
+// 響應式畫布調整
 function resizeCanvas(){
-  const container = document.getElementById("canvasContainer");
-  const width = Math.min(window.innerWidth-20,600);
-  const height = Math.min(window.innerHeight-200,400);
-  [bgCanvas, drawCanvas, overlayCanvas].forEach(c=>{
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  
+  let width, height;
+  
+  if (bgImage) {
+    // 有背景圖片時，根據圖片比例調整
+    const imgAspect = bgImage.width / bgImage.height;
+    
+    // 寬度設為視窗寬度
+    width = viewportWidth;
+    height = width / imgAspect;
+    
+    // 如果高度超過視窗高度的80%，則調整
+    const maxHeight = viewportHeight * 0.8;
+    if (height > maxHeight) {
+      height = maxHeight;
+      width = height * imgAspect;
+    }
+  } else {
+    // 沒有背景圖片時，使用視窗寬度和4:3比例
+    width = viewportWidth;
+    height = width * 0.75; // 4:3比例
+    
+    // 確保高度不超過視窗的80%
+    const maxHeight = viewportHeight * 0.8;
+    if (height > maxHeight) {
+      height = maxHeight;
+      width = height * (4/3);
+    }
+  }
+  
+  [bgCanvas, drawCanvas, overlayCanvas].forEach(c => {
     c.width = width;
     c.height = height;
+    c.style.width = width + 'px';
+    c.style.height = height + 'px';
   });
+  
+  // 設置白色預設背景
+  bgCtx.fillStyle = '#FFFFFF';
+  bgCtx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
+  
   redrawBackground();
   redrawDrawLayer();
   redrawOverlay();
 }
+
 window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', function() {
+  setTimeout(resizeCanvas, 100);
+});
 
 // 觸控與滑鼠事件
 function getPos(e){
@@ -105,6 +289,7 @@ function startDraw(e){
 
 function draw(e){
   if(!drawing) return;
+  e.preventDefault();
   const pos = getPos(e);
   ctx.lineWidth = lineWidth;
   ctx.lineCap = "round";
@@ -124,7 +309,7 @@ function stopDraw(){
   saveHistory();
 }
 
-// 事件監聽器綁定到繪圖層，但確保不會影響到覆蓋層
+// 事件監聽器綁定
 drawCanvas.addEventListener("mousedown", startDraw);
 drawCanvas.addEventListener("mousemove", draw);
 drawCanvas.addEventListener("mouseup", stopDraw);
@@ -133,7 +318,6 @@ drawCanvas.addEventListener("touchstart", startDraw, {passive:false});
 drawCanvas.addEventListener("touchmove", draw, {passive:false});
 drawCanvas.addEventListener("touchend", stopDraw, {passive:false});
 
-// 也在覆蓋層上添加事件監聽器，讓去背圖上也能繪圖
 overlayCanvas.addEventListener("mousedown", startDraw);
 overlayCanvas.addEventListener("mousemove", draw);
 overlayCanvas.addEventListener("mouseup", stopDraw);
@@ -146,8 +330,11 @@ overlayCanvas.addEventListener("touchend", stopDraw, {passive:false});
 function setColor(color){ currentColor=color; isEraser=false; }
 function setEraser(){ isEraser=true; }
 
-// 粗細
-function changeLineWidth(value){ lineWidth=value; }
+// 粗細調整
+function changeLineWidth(value){ 
+  lineWidth = value; 
+  document.getElementById('lineWidthValue').textContent = value;
+}
 
 // 清除畫筆層
 function clearDraw(){
@@ -160,7 +347,7 @@ function saveHistory(){
   const imgData = drawCanvas.toDataURL();
   history.push(imgData);
   redoHistory = [];
-  if(history.length > 50) history.shift(); // 限制歷史記錄數量
+  if(history.length > 50) history.shift();
 }
 
 // 復原
@@ -195,40 +382,33 @@ function uploadBackgroundImage(event){
   const file = event.target.files[0];
   if(!file) return;
   
-  // 檢查文件類型
   if(!file.type.startsWith('image/')){
     alert('請選擇圖片文件！');
     event.target.value = '';
     return;
   }
   
-  console.log('上傳背景圖片:', file.name, file.type, file.size);
-  
   const reader = new FileReader();
   reader.onload = function(e) {
     const img = new Image();
     img.onload = function() {
-      console.log('背景圖片載入成功:', img.width, 'x', img.height);
       bgImage = img;
-      redrawBackground();
+      resizeCanvas(); // 重新調整畫布尺寸以配合圖片
     };
     img.onerror = function() {
-      console.error('圖片載入失敗');
       alert('圖片載入失敗，請檢查文件格式！');
     };
     img.src = e.target.result;
   };
   reader.onerror = function() {
-    console.error('文件讀取失敗');
     alert('文件讀取失敗！');
   };
   reader.readAsDataURL(file);
   
-  // 清空輸入框
   event.target.value = '';
 }
 
-// 上傳覆蓋圖片（去背 PNG）
+// 上傳覆蓋圖片
 function uploadOverlayImage(event){
   const file = event.target.files[0];
   if(!file) return;
@@ -239,36 +419,30 @@ function uploadOverlayImage(event){
     return;
   }
   
-  console.log('上傳去背圖片:', file.name, file.type, file.size);
-  
   const reader = new FileReader();
   reader.onload = function(e) {
     const img = new Image();
     img.onload = function() {
-      console.log('去背圖片載入成功:', img.width, 'x', img.height);
       overlayImage = img;
       redrawOverlay();
     };
     img.onerror = function() {
-      console.error('圖片載入失敗');
       alert('圖片載入失敗，請檢查文件格式！');
     };
     img.src = e.target.result;
   };
   reader.onerror = function() {
-    console.error('文件讀取失敗');
     alert('文件讀取失敗！');
   };
   reader.readAsDataURL(file);
   
-  // 清空輸入框
   event.target.value = '';
 }
 
 // 清除背景
 function clearBackground(){
   bgImage = null;
-  redrawBackground();
+  resizeCanvas(); // 重新調整到預設尺寸
 }
 
 // 清除覆蓋層
@@ -279,39 +453,17 @@ function clearOverlay(){
 
 // 重新繪製背景
 function redrawBackground(){
-  bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height);
+  // 先填充白色背景
+  bgCtx.fillStyle = '#FFFFFF';
+  bgCtx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
   
   if(bgImage) {
-    console.log('重新繪製背景圖片');
-    // 保持寬高比，填滿畫布
-    const canvasAspect = bgCanvas.width / bgCanvas.height;
-    const imgAspect = bgImage.width / bgImage.height;
-    
-    let drawWidth, drawHeight, drawX, drawY;
-    
-    if (imgAspect > canvasAspect) {
-      // 圖片較寬，以高度為準
-      drawHeight = bgCanvas.height;
-      drawWidth = drawHeight * imgAspect;
-      drawX = (bgCanvas.width - drawWidth) / 2;
-      drawY = 0;
-    } else {
-      // 圖片較高，以寬度為準
-      drawWidth = bgCanvas.width;
-      drawHeight = drawWidth / imgAspect;
-      drawX = 0;
-      drawY = (bgCanvas.height - drawHeight) / 2;
-    }
-    
+    // 將圖片完全填滿畫布，保持比例
     try {
-      bgCtx.drawImage(bgImage, drawX, drawY, drawWidth, drawHeight);
-      console.log('背景圖片繪製完成');
+      bgCtx.drawImage(bgImage, 0, 0, bgCanvas.width, bgCanvas.height);
     } catch(e) {
-      console.error('繪製背景圖片時發生錯誤:', e);
       alert('繪製背景圖片時發生錯誤！');
     }
-  } else {
-    console.log('沒有背景圖片需要繪製');
   }
 }
 
@@ -329,22 +481,17 @@ function redrawDrawLayer(){
   }
 }
 
-// 重新繪製覆蓋層（去背圖）
+// 重新繪製覆蓋層
 function redrawOverlay(){
   overlayCtx.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);
   
   if(overlayImage) {
-    console.log('重新繪製覆蓋圖片');
     try {
-      // 保持原始尺寸和透明度
+      // 保持原始尺寸和透明度，填滿整個畫布
       overlayCtx.drawImage(overlayImage, 0, 0, overlayCanvas.width, overlayCanvas.height);
-      console.log('覆蓋圖片繪製完成');
     } catch(e) {
-      console.error('繪製覆蓋圖片時發生錯誤:', e);
       alert('繪製覆蓋圖片時發生錯誤！');
     }
-  } else {
-    console.log('沒有覆蓋圖片需要繪製');
   }
 }
 
@@ -356,9 +503,9 @@ function downloadCanvas(){
   const tempCtx = tempCanvas.getContext("2d");
   
   // 按順序合併所有圖層
-  tempCtx.drawImage(bgCanvas,0,0);        // 背景層
-  tempCtx.drawImage(drawCanvas,0,0);      // 繪圖層
-  tempCtx.drawImage(overlayCanvas,0,0);   // 覆蓋層（去背圖）
+  tempCtx.drawImage(bgCanvas,0,0);
+  tempCtx.drawImage(drawCanvas,0,0);
+  tempCtx.drawImage(overlayCanvas,0,0);
   
   const link = document.createElement("a");
   link.download = "canvas_" + new Date().getTime() + ".png";
@@ -366,7 +513,7 @@ function downloadCanvas(){
   link.click();
 }
 
-// 36 色調色盤
+// 36色調色盤
 const colors=[
 "#000000","#808080","#C0C0C0","#FFFFFF","#800000","#FF0000",
 "#808000","#FFFF00","#008000","#00FF00","#008080","#00FFFF",
@@ -381,7 +528,7 @@ colors.forEach(c=>{
   btn.className="color-btn";
   btn.style.backgroundColor=c;
   btn.onclick=()=>setColor(c);
-  btn.title = c; // 顯示顏色代碼提示
+  btn.title = c;
   palette.appendChild(btn);
 });
 
