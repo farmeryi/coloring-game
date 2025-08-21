@@ -1,870 +1,319 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>塗色遊戲</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            overflow-x: auto;
-        }
-
-        .container {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            padding: 10px;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 15px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            padding: 15px;
-        }
-
-        .upload-section {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .file-input-wrapper {
-            position: relative;
-            overflow: hidden;
-            display: inline-block;
-            background: #4CAF50;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 25px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 14px;
-        }
-
-        .file-input-wrapper:hover {
-            background: #45a049;
-            transform: translateY(-2px);
-        }
-
-        .file-input-wrapper input[type=file] {
-            position: absolute;
-            left: -9999px;
-        }
-
-        .demo-btn {
-            background: #FF6B6B;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
-
-        .demo-btn:hover {
-            background: #ff5252;
-            transform: translateY(-2px);
-        }
-
-        .controls {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .control-group {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 8px 12px;
-            border-radius: 20px;
-        }
-
-        .brush-size-control {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .brush-size-slider {
-            width: 100px;
-            height: 5px;
-            border-radius: 5px;
-            background: #ddd;
-            outline: none;
-            -webkit-appearance: none;
-        }
-
-        .brush-size-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #4CAF50;
-            cursor: pointer;
-        }
-
-        .brush-preview {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #333;
-            border: 2px solid white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .brush-dot {
-            border-radius: 50%;
-            background: currentColor;
-            transition: all 0.3s ease;
-        }
-
-        .action-btn {
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: white;
-            padding: 10px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 14px;
-        }
-
-        .action-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
-        }
-
-        .action-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .clear-btn {
-            background: #ff6b6b;
-        }
-
-        .clear-btn:hover {
-            background: #ff5252;
-        }
-
-        .main-content {
-            flex: 1;
-            display: flex;
-            gap: 15px;
-            min-height: 0;
-        }
-
-        .color-palette {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 20px;
-            width: 280px;
-            max-height: fit-content;
-        }
-
-        .palette-title {
-            color: white;
-            text-align: center;
-            margin-bottom: 15px;
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        .color-grid {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 8px;
-            margin-bottom: 20px;
-        }
-
-        .color-item {
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            cursor: pointer;
-            border: 3px solid transparent;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .color-item:hover {
-            transform: scale(1.1);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
-
-        .color-item.selected {
-            border-color: white;
-            transform: scale(1.2);
-            box-shadow: 0 0 20px rgba(255,255,255,0.8);
-        }
-
-        .eraser {
-            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 12px;
-        }
-
-        .canvas-container {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 20px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .canvas-wrapper {
-            position: relative;
-            max-width: 100%;
-            max-height: 100%;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-
-        #drawingCanvas, #lineCanvas {
-            display: block;
-            cursor: crosshair;
-        }
-
-        .placeholder {
-            color: rgba(255, 255, 255, 0.7);
-            text-align: center;
-            font-size: 18px;
-            padding: 40px;
-        }
-
-        /* 手機版樣式 */
-        @media (max-width: 768px) {
-            .container {
-                padding: 5px;
-            }
-
-            .header {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 15px;
-            }
-
-            .upload-section {
-                justify-content: center;
-            }
-
-            .controls {
-                justify-content: center;
-                flex-wrap: wrap;
-            }
-
-            .main-content {
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            .color-palette {
-                width: 100%;
-                order: 2;
-            }
-
-            .canvas-container {
-                order: 1;
-                min-height: 60vh;
-            }
-
-            .color-grid {
-                grid-template-columns: repeat(9, 1fr);
-                gap: 6px;
-            }
-
-            .color-item {
-                width: 30px;
-                height: 30px;
-            }
-
-            .brush-size-control {
-                flex: 1;
-                justify-content: center;
-            }
-        }
-
-        /* 自定義游標 */
-        .canvas-wrapper.drawing {
-            cursor: none;
-        }
-
-        .cursor-dot {
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(0, 0, 0, 0.5);
-            border: 2px solid white;
-            pointer-events: none;
-            z-index: 1000;
-            transform: translate(-50%, -50%);
-            display: none;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>塗色遊戲</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Arial,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;overflow-x:hidden;}
+.container{display:flex;flex-direction:column;min-height:100vh;padding:10px;}
+.header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:15px;background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border-radius:15px;padding:15px;}
+.upload-section{display:flex;align-items:center;gap:10px;}
+.file-input-wrapper{position:relative;overflow:hidden;display:inline-block;background:#4CAF50;color:white;padding:10px 20px;border-radius:25px;cursor:pointer;font-size:14px;transition:all 0.3s;}
+.file-input-wrapper:hover{background:#45a049;transform:translateY(-2px);}
+.file-input-wrapper input[type=file]{position:absolute;left:-9999px;}
+.demo-btn{background:#FF6B6B;color:white;border:none;padding:10px 20px;border-radius:25px;cursor:pointer;font-size:14px;transition:all 0.3s;}
+.demo-btn:hover{background:#ff5252;transform:translateY(-2px);}
+.controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.control-group{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.2);padding:8px 12px;border-radius:20px;}
+.brush-size-slider{width:100px;height:5px;border-radius:5px;background:#ddd;outline:none;-webkit-appearance:none;}
+.brush-size-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:50%;background:#4CAF50;cursor:pointer;}
+.brush-preview{width:40px;height:40px;border-radius:50%;background:#333;border:2px solid white;display:flex;align-items:center;justify-content:center;}
+.brush-dot{border-radius:50%;background:currentColor;transition:all 0.3s;}
+.action-btn{background:rgba(255,255,255,0.2);border:none;color:white;padding:10px 15px;border-radius:20px;cursor:pointer;transition:all 0.3s;font-size:14px;}
+.action-btn:hover{background:rgba(255,255,255,0.3);transform:translateY(-2px);}
+.action-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+.clear-btn{background:#ff6b6b;}
+.clear-btn:hover{background:#ff5252;}
+.main-content{flex:1;display:flex;gap:15px;min-height:0;}
+.color-palette{background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border-radius:20px;padding:20px;width:280px;max-height:fit-content;}
+.palette-title{color:white;text-align:center;margin-bottom:15px;font-size:18px;font-weight:bold;}
+.color-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:20px;}
+.color-item{width:35px;height:35px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:all 0.3s;position:relative;}
+.color-item:hover{transform:scale(1.1);box-shadow:0 4px 15px rgba(0,0,0,0.3);}
+.color-item.selected{border-color:white;transform:scale(1.2);box-shadow:0 0 20px rgba(255,255,255,0.8);}
+.eraser{background:linear-gradient(45deg,#ff6b6b,#ee5a24);display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:12px;}
+.canvas-container{flex:1;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border-radius:20px;padding:20px;position:relative;overflow:hidden;}
+.canvas-wrapper{position:relative;max-width:100%;max-height:100%;border-radius:15px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.3);}
+#drawingCanvas{display:block;cursor:crosshair;}
+.placeholder{color:rgba(255,255,255,0.7);text-align:center;font-size:18px;padding:40px;}
+@media(max-width:768px){.container{padding:5px;}.header{flex-direction:column;align-items:stretch;gap:15px;}.upload-section{justify-content:center;}.controls{justify-content:center;flex-wrap:wrap;}.main-content{flex-direction:column;gap:10px;}.color-palette{width:100%;order:2;}.canvas-container{order:1;min-height:60vh;}.color-grid{grid-template-columns:repeat(9,1fr);gap:6px;}.color-item{width:30px;height:30px;}.brush-size-control{flex:1;justify-content:center;}}
+</style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="upload-section">
-                <div class="file-input-wrapper">
-                    <input type="file" id="imageUpload" accept="image/*">
-                    上傳圖片
-                </div>
-                <button class="demo-btn" id="demoBtn">載入示範圖片</button>
-            </div>
-            
-            <div class="controls">
-                <div class="control-group brush-size-control">
-                    <span style="color: white; font-size: 14px;">筆刷:</span>
-                    <input type="range" id="brushSize" class="brush-size-slider" min="1" max="50" value="5">
-                    <div class="brush-preview">
-                        <div class="brush-dot" id="brushPreview"></div>
-                    </div>
-                </div>
-                
-                <button class="action-btn" id="undoBtn" disabled>↶ 復原</button>
-                <button class="action-btn" id="redoBtn" disabled>↷ 重做</button>
-                <button class="action-btn clear-btn" id="clearBtn">🗑️ 清空</button>
-            </div>
-        </div>
-
-        <div class="main-content">
-            <div class="color-palette">
-                <div class="palette-title">選擇顏色</div>
-                <div class="color-grid" id="colorGrid">
-                    <!-- 顏色會由 JavaScript 動態生成 -->
-                </div>
-            </div>
-
-            <div class="canvas-container">
-                <div class="canvas-wrapper" id="canvasWrapper">
-                    <div class="placeholder">
-                        請上傳圖片或點擊「載入示範圖片」開始塗色
-                    </div>
-                </div>
-                <div class="cursor-dot" id="cursorDot"></div>
-            </div>
-        </div>
+<div class="container">
+  <div class="header">
+    <div class="upload-section">
+      <div class="file-input-wrapper">
+        <input type="file" id="imageUpload" accept="image/*">
+        上傳圖片
+      </div>
+      <button class="demo-btn" id="demoBtn">載入示範圖片</button>
     </div>
+    <div class="controls">
+      <div class="control-group brush-size-control">
+        <span style="color:white;font-size:14px;">筆刷:</span>
+        <input type="range" id="brushSize" class="brush-size-slider" min="1" max="50" value="5">
+        <div class="brush-preview">
+          <div class="brush-dot" id="brushPreview"></div>
+        </div>
+      </div>
+      <button class="action-btn" id="undoBtn" disabled>↶ 復原</button>
+      <button class="action-btn" id="redoBtn" disabled>↷ 重做</button>
+      <button class="action-btn clear-btn" id="clearBtn">🗑️ 清空</button>
+      <button class="action-btn" id="downloadBtn">⬇️ 下載</button>
+    </div>
+  </div>
+  <div class="main-content">
+    <div class="color-palette">
+      <div class="palette-title">選擇顏色</div>
+      <div class="color-grid" id="colorGrid"></div>
+    </div>
+    <div class="canvas-container">
+      <div class="canvas-wrapper" id="canvasWrapper">
+        <div class="placeholder">請上傳圖片或點擊「載入示範圖片」開始塗色</div>
+      </div>
+    </div>
+  </div>
+</div>
 
-    <script>
-        class ColoringGame {
-            constructor() {
-                this.canvas = null;
-                this.ctx = null;
-                this.lineCanvas = null;
-                this.lineCtx = null;
-                this.isDrawing = false;
-                this.currentColor = '#FF6B6B';
-                this.currentSize = 5;
-                this.history = [];
-                this.historyStep = -1;
-                this.isEraser = false;
-                
-                this.initializeColors();
-                this.bindEvents();
-                this.updateBrushPreview();
-            }
+<script>
+class ColoringGame {
+  constructor() {
+    this.canvas = null;
+    this.ctx = null;
+    this.isDrawing = false;
+    this.currentColor = '#FF6B6B';
+    this.currentSize = 5;
+    this.history = [];
+    this.historyStep = -1;
+    this.isEraser = false;
+    this.img = null;
 
-            initializeColors() {
-                const colors = [
-                    '#FF6B6B', '#FF8E53', '#FF6B9D', '#C44569', '#F8B500', '#FD79A8',
-                    '#6C5CE7', '#A29BFE', '#74B9FF', '#0984E3', '#00B894', '#00CEC9',
-                    '#55A3FF', '#26A69A', '#66BB6A', '#8BC34A', '#CDDC39', '#FFEB3B',
-                    '#FFC107', '#FF9800', '#FF5722', '#795548', '#9E9E9E', '#607D8B',
-                    '#E91E63', '#9C27B0', '#673AB7', '#3F51B5', '#2196F3', '#03A9F4',
-                    '#00BCD4', '#009688', '#4CAF50', '#FFFF00', '#FF0000', '#000000'
-                ];
+    this.initializeColors();
+    this.bindEvents();
+    this.updateBrushPreview();
+  }
 
-                const colorGrid = document.getElementById('colorGrid');
-                colorGrid.innerHTML = '';
+  initializeColors() {
+    const colors=[
+      '#FF6B6B','#FF8E53','#FF6B9D','#C44569','#F8B500','#FD79A8',
+      '#6C5CE7','#A29BFE','#74B9FF','#0984E3','#00B894','#00CEC9',
+      '#55A3FF','#26A69A','#66BB6A','#8BC34A','#CDDC39','#FFEB3B',
+      '#FFC107','#FF9800','#FF5722','#795548','#9E9E9E','#607D8B',
+      '#E91E63','#9C27B0','#673AB7','#3F51B5','#2196F3','#03A9F4',
+      '#00BCD4','#009688','#4CAF50','#FFFF00','#FF0000','#000000'
+    ];
+    const colorGrid=document.getElementById('colorGrid');
+    colorGrid.innerHTML='';
+    colors.forEach((color,index)=>{
+      const colorItem=document.createElement('div');
+      colorItem.className='color-item';
+      colorItem.style.backgroundColor=color;
+      colorItem.dataset.color=color;
+      if(index===0) colorItem.classList.add('selected');
+      colorItem.addEventListener('click',()=>this.selectColor(color,colorItem));
+      colorGrid.appendChild(colorItem);
+    });
+    // 橡皮擦
+    const eraser=document.createElement('div');
+    eraser.className='color-item eraser';
+    eraser.textContent='擦';
+    eraser.addEventListener('click',()=>this.selectEraser(eraser));
+    colorGrid.appendChild(eraser);
+  }
 
-                colors.forEach((color, index) => {
-                    const colorItem = document.createElement('div');
-                    colorItem.className = 'color-item';
-                    colorItem.style.backgroundColor = color;
-                    colorItem.dataset.color = color;
-                    
-                    if (index === 0) {
-                        colorItem.classList.add('selected');
-                    }
-                    
-                    colorItem.addEventListener('click', () => this.selectColor(color, colorItem));
-                    colorGrid.appendChild(colorItem);
-                });
+  selectColor(color,element){
+    this.currentColor=color;
+    this.isEraser=false;
+    this.updateSelectedColor(element);
+    this.updateBrushPreview();
+  }
 
-                // 添加橡皮擦
-                const eraser = document.createElement('div');
-                eraser.className = 'color-item eraser';
-                eraser.textContent = '擦';
-                eraser.addEventListener('click', () => this.selectEraser(eraser));
-                colorGrid.appendChild(eraser);
-            }
+  selectEraser(element){
+    this.isEraser=true;
+    this.updateSelectedColor(element);
+    this.updateBrushPreview();
+  }
 
-            selectColor(color, element) {
-                this.currentColor = color;
-                this.isEraser = false;
-                this.updateSelectedColor(element);
-                this.updateBrushPreview();
-            }
+  updateSelectedColor(selectedElement){
+    document.querySelectorAll('.color-item').forEach(item=>item.classList.remove('selected'));
+    selectedElement.classList.add('selected');
+  }
 
-            selectEraser(element) {
-                this.isEraser = true;
-                this.updateSelectedColor(element);
-                this.updateBrushPreview();
-            }
+  updateBrushPreview(){
+    const preview=document.getElementById('brushPreview');
+    if(preview){
+      const size=Math.min(this.currentSize,30);
+      preview.style.width=size+'px';
+      preview.style.height=size+'px';
+      preview.style.backgroundColor=this.isEraser?'#ff6b6b':this.currentColor;
+    }
+  }
 
-            updateSelectedColor(selectedElement) {
-                document.querySelectorAll('.color-item').forEach(item => {
-                    item.classList.remove('selected');
-                });
-                selectedElement.classList.add('selected');
-            }
+  bindEvents(){
+    document.getElementById('imageUpload').addEventListener('change',(e)=>this.handleImageUpload(e));
+    document.getElementById('demoBtn').addEventListener('click',()=>this.loadDemoImage());
+    document.getElementById('brushSize').addEventListener('input',(e)=>{
+      this.currentSize=parseInt(e.target.value);
+      this.updateBrushPreview();
+    });
+    document.getElementById('undoBtn').addEventListener('click',()=>this.undo());
+    document.getElementById('redoBtn').addEventListener('click',()=>this.redo());
+    document.getElementById('clearBtn').addEventListener('click',()=>this.clearCanvas());
+    document.getElementById('downloadBtn').addEventListener('click',()=>this.downloadCanvas());
+  }
 
-            updateBrushPreview() {
-                const preview = document.getElementById('brushPreview');
-                if (preview) {
-                    const size = Math.min(this.currentSize, 30);
-                    preview.style.width = size + 'px';
-                    preview.style.height = size + 'px';
-                    preview.style.backgroundColor = this.isEraser ? '#ff6b6b' : this.currentColor;
-                }
-            }
+  handleImageUpload(event){
+    const file=event.target.files[0];
+    if(!file) return;
+    if(!file.type.startsWith('image/')){alert('請選擇圖片檔案！');return;}
+    const reader=new FileReader();
+    reader.onload=(e)=>{
+      const img=new Image();
+      img.onload=()=>{
+        this.img=img;
+        this.setupCanvas(img);
+      };
+      img.src=e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
 
-            bindEvents() {
-                // 檔案上傳
-                document.getElementById('imageUpload').addEventListener('change', (e) => {
-                    this.handleImageUpload(e);
-                });
+  loadDemoImage(){
+    const canvas=document.createElement('canvas');
+    canvas.width=400; canvas.height=400;
+    const ctx=canvas.getContext('2d');
+    ctx.fillStyle='white'; ctx.fillRect(0,0,400,400);
+    ctx.strokeStyle='black'; ctx.lineWidth=3; ctx.fillStyle='white';
+    for(let i=0;i<6;i++){
+      const angle=(i*Math.PI)/3;
+      ctx.beginPath();
+      ctx.ellipse(200+Math.cos(angle)*40,200+Math.sin(angle)*40,30,15,angle,0,2*Math.PI);
+      ctx.fill(); ctx.stroke();
+    }
+    ctx.beginPath(); ctx.arc(200,200,25,0,2*Math.PI); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(200,225); ctx.lineTo(200,350); ctx.lineWidth=5; ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(180,280,20,8,-Math.PI/4,0,2*Math.PI); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(220,300,20,8,Math.PI/4,0,2*Math.PI); ctx.fill(); ctx.stroke();
+    const img=new Image();
+    img.onload=()=>{this.img=img; this.setupCanvas(img);};
+    img.src=canvas.toDataURL();
+  }
 
-                // 示範圖片按鈕
-                document.getElementById('demoBtn').addEventListener('click', () => {
-                    console.log('載入示範圖片按鈕被點擊');
-                    this.loadDemoImage();
-                });
+  setupCanvas(img){
+    const canvasWrapper=document.getElementById('canvasWrapper');
+    const container=canvasWrapper.parentElement;
+    const containerRect=container.getBoundingClientRect();
+    const availableWidth=containerRect.width-40;
+    const availableHeight=containerRect.height-40;
+    let canvasWidth,canvasHeight;
+    const imgRatio=img.width/img.height;
+    const containerRatio=availableWidth/availableHeight;
+    if(imgRatio>containerRatio){canvasWidth=Math.min(availableWidth,img.width); canvasHeight=canvasWidth/imgRatio;}
+    else{canvasHeight=Math.min(availableHeight,img.height); canvasWidth=canvasHeight*imgRatio;}
 
-                // 筆刷大小控制
-                document.getElementById('brushSize').addEventListener('input', (e) => {
-                    console.log('筆刷大小改變:', e.target.value);
-                    this.currentSize = parseInt(e.target.value);
-                    this.updateBrushPreview();
-                });
+    canvasWrapper.innerHTML='';
+    this.canvas=document.createElement('canvas');
+    this.canvas.id='drawingCanvas';
+    this.canvas.width=canvasWidth; this.canvas.height=canvasHeight;
+    this.canvas.style.position='relative';
+    this.canvas.style.zIndex='1';
+    this.ctx=this.canvas.getContext('2d');
+    this.ctx.lineCap='round'; this.ctx.lineJoin='round';
+    // 畫上圖片線條
+    this.ctx.clearRect(0,0,canvasWidth,canvasHeight);
+    this.ctx.drawImage(img,0,0,canvasWidth,canvasHeight);
 
-                // 控制按鈕
-                document.getElementById('undoBtn').addEventListener('click', () => this.undo());
-                document.getElementById('redoBtn').addEventListener('click', () => this.redo());
-                document.getElementById('clearBtn').addEventListener('click', () => {
-                    console.log('清空按鈕被點擊');
-                    this.clearCanvas();
-                });
-            }
+    canvasWrapper.appendChild(this.canvas);
+    this.bindCanvasEvents();
+    this.saveState();
+  }
 
-            clearCanvas() {
-                console.log('執行清空功能');
-                
-                if (!this.ctx || !this.canvas) {
-                    console.log('沒有畫布可清空');
-                    alert('請先載入圖片！');
-                    return;
-                }
-                
-                console.log('清空畫布，尺寸:', this.canvas.width, 'x', this.canvas.height);
-                
-                // 清空繪圖層
-                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                
-                // 重新初始化歷史記錄
-                this.history = [];
-                this.historyStep = -1;
-                this.saveState();
-                this.updateUndoRedoButtons();
-                
-                console.log('清空完成！');
-            }
+  bindCanvasEvents(){
+    if(!this.canvas) return;
+    const getPos=(e)=>{
+      const rect=this.canvas.getBoundingClientRect();
+      const scaleX=this.canvas.width/rect.width;
+      const scaleY=this.canvas.height/rect.height;
+      return{
+        x:(e.clientX-rect.left)*scaleX,
+        y:(e.clientY-rect.top)*scaleY
+      };
+    };
+    this.canvas.addEventListener('mousedown',e=>this.startDrawing(getPos(e)));
+    this.canvas.addEventListener('mousemove',e=>this.draw(getPos(e)));
+    this.canvas.addEventListener('mouseup',()=>this.stopDrawing());
+    this.canvas.addEventListener('mouseout',()=>this.stopDrawing());
+    this.canvas.addEventListener('touchstart',e=>{e.preventDefault();const t=e.touches[0];this.startDrawing(getPos(t));});
+    this.canvas.addEventListener('touchmove',e=>{e.preventDefault();const t=e.touches[0];this.draw(getPos(t));});
+    this.canvas.addEventListener('touchend',e=>{e.preventDefault();this.stopDrawing();});
+  }
 
-            loadDemoImage() {
-                console.log('開始載入示範圖片');
-                
-                // 創建示範圖片
-                const canvas = document.createElement('canvas');
-                canvas.width = 400;
-                canvas.height = 400;
-                const ctx = canvas.getContext('2d');
-                
-                // 白色背景
-                ctx.fillStyle = 'white';
-                ctx.fillRect(0, 0, 400, 400);
-                
-                // 繪製花朵線稿
-                ctx.strokeStyle = 'black';
-                ctx.lineWidth = 3;
-                ctx.fillStyle = 'white';
-                
-                // 花瓣
-                for (let i = 0; i < 6; i++) {
-                    const angle = (i * Math.PI) / 3;
-                    ctx.beginPath();
-                    ctx.ellipse(200 + Math.cos(angle) * 40, 200 + Math.sin(angle) * 40, 30, 15, angle, 0, 2 * Math.PI);
-                    ctx.fill();
-                    ctx.stroke();
-                }
-                
-                // 花心
-                ctx.beginPath();
-                ctx.arc(200, 200, 25, 0, 2 * Math.PI);
-                ctx.fill();
-                ctx.stroke();
-                
-                // 莖
-                ctx.beginPath();
-                ctx.moveTo(200, 225);
-                ctx.lineTo(200, 350);
-                ctx.lineWidth = 5;
-                ctx.stroke();
-                
-                // 葉子
-                ctx.beginPath();
-                ctx.ellipse(180, 280, 20, 8, -Math.PI/4, 0, 2 * Math.PI);
-                ctx.fillStyle = 'white';
-                ctx.fill();
-                ctx.lineWidth = 3;
-                ctx.stroke();
-                
-                ctx.beginPath();
-                ctx.ellipse(220, 300, 20, 8, Math.PI/4, 0, 2 * Math.PI);
-                ctx.fill();
-                ctx.stroke();
-                
-                // 轉換為圖片
-                const img = new Image();
-                img.onload = () => {
-                    console.log('示範圖片載入成功');
-                    this.setupCanvas(img);
-                };
-                img.src = canvas.toDataURL();
-            }
+  startDrawing(pos){this.isDrawing=true;this.ctx.beginPath();this.ctx.moveTo(pos.x,pos.y);}
+  draw(pos){
+    if(!this.isDrawing) return;
+    this.ctx.strokeStyle=this.isEraser?'white':this.currentColor;
+    this.ctx.lineWidth=this.currentSize;
+    this.ctx.globalCompositeOperation=this.isEraser?'destination-out':'source-over';
+    this.ctx.lineTo(pos.x,pos.y);
+    this.ctx.stroke();
+  }
+  stopDrawing(){if(this.isDrawing){this.isDrawing=false;this.saveState();}}
 
-            handleImageUpload(event) {
-                const file = event.target.files[0];
-                if (!file) return;
+  saveState(){
+    if(!this.canvas) return;
+    this.history=this.history.slice(0,this.historyStep+1);
+    this.history.push(this.canvas.toDataURL());
+    this.historyStep++;
+    this.updateUndoRedoButtons();
+  }
 
-                if (!file.type.startsWith('image/')) {
-                    alert('請選擇圖片檔案！');
-                    return;
-                }
+  undo(){
+    if(this.historyStep>0){
+      this.historyStep--;
+      this.restoreState(this.history[this.historyStep]);
+      this.updateUndoRedoButtons();
+    }
+  }
 
-                if (file.size > 10 * 1024 * 1024) {
-                    alert('圖片檔案太大！請選擇小於10MB的圖片。');
-                    return;
-                }
+  redo(){
+    if(this.historyStep<this.history.length-1){
+      this.historyStep++;
+      this.restoreState(this.history[this.historyStep]);
+      this.updateUndoRedoButtons();
+    }
+  }
 
-                console.log('開始載入圖片：', file.name);
-                
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        console.log('圖片載入成功');
-                        this.setupCanvas(img);
-                    };
-                    img.onerror = () => {
-                        alert('圖片載入失敗，請嘗試其他圖片！');
-                    };
-                    img.src = e.target.result;
-                };
-                reader.onerror = () => {
-                    alert('檔案讀取失敗！');
-                };
-                reader.readAsDataURL(file);
-            }
+  restoreState(dataURL){
+    const img=new Image();
+    img.onload=()=>{this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);this.ctx.drawImage(img,0,0);}
+    img.src=dataURL;
+  }
 
-            setupCanvas(img) {
-                console.log('設置畫布');
-                const canvasWrapper = document.getElementById('canvasWrapper');
-                const container = canvasWrapper.parentElement;
-                
-                // 計算畫布尺寸
-                const containerRect = container.getBoundingClientRect();
-                const availableWidth = containerRect.width - 40;
-                const availableHeight = containerRect.height - 40;
-                
-                let canvasWidth, canvasHeight;
-                const imgRatio = img.width / img.height;
-                const containerRatio = availableWidth / availableHeight;
-                
-                if (imgRatio > containerRatio) {
-                    canvasWidth = Math.min(availableWidth, img.width);
-                    canvasHeight = canvasWidth / imgRatio;
-                } else {
-                    canvasHeight = Math.min(availableHeight, img.height);
-                    canvasWidth = canvasHeight * imgRatio;
-                }
+  updateUndoRedoButtons(){
+    document.getElementById('undoBtn').disabled=this.historyStep<=0;
+    document.getElementById('redoBtn').disabled=this.historyStep>=this.history.length-1;
+  }
 
-                console.log('畫布尺寸:', canvasWidth, 'x', canvasHeight);
+  clearCanvas(){
+    if(!this.canvas) return;
+    this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
+    if(this.img) this.ctx.drawImage(this.img,0,0,this.canvas.width,this.canvas.height);
+    this.saveState();
+  }
 
-                // 清空容器
-                canvasWrapper.innerHTML = '';
-                canvasWrapper.style.width = canvasWidth + 'px';
-                canvasWrapper.style.height = canvasHeight + 'px';
-                
-                // 背景畫布（白色）
-                const backgroundCanvas = document.createElement('canvas');
-                backgroundCanvas.width = canvasWidth;
-                backgroundCanvas.height = canvasHeight;
-                backgroundCanvas.style.position = 'absolute';
-                backgroundCanvas.style.top = '0';
-                backgroundCanvas.style.left = '0';
-                backgroundCanvas.style.zIndex = '1';
-                const backgroundCtx = backgroundCanvas.getContext('2d');
-                backgroundCtx.fillStyle = 'white';
-                backgroundCtx.fillRect(0, 0, canvasWidth, canvasHeight);
-                
-                // 繪圖畫布（塗色層）
-                this.canvas = document.createElement('canvas');
-                this.canvas.id = 'drawingCanvas';
-                this.canvas.width = canvasWidth;
-                this.canvas.height = canvasHeight;
-                this.canvas.style.position = 'absolute';
-                this.canvas.style.top = '0';
-                this.canvas.style.left = '0';
-                this.canvas.style.zIndex = '2';
-                
-                this.ctx = this.canvas.getContext('2d');
-                this.ctx.lineCap = 'round';
-                this.ctx.lineJoin = 'round';
-                
-                // 線條畫布（最上層）
-                this.lineCanvas = document.createElement('canvas');
-                this.lineCanvas.id = 'lineCanvas';
-                this.lineCanvas.width = canvasWidth;
-                this.lineCanvas.height = canvasHeight;
-                this.lineCanvas.style.position = 'absolute';
-                this.lineCanvas.style.top = '0';
-                this.lineCanvas.style.left = '0';
-                this.lineCanvas.style.zIndex = '3';
-                this.lineCanvas.style.pointerEvents = 'none';
-                
-                this.lineCtx = this.lineCanvas.getContext('2d');
-                
-                // 提取線條
-                this.extractLines(img, canvasWidth, canvasHeight);
-                
-                // 加入畫布
-                canvasWrapper.appendChild(backgroundCanvas);
-                canvasWrapper.appendChild(this.canvas);
-                canvasWrapper.appendChild(this.lineCanvas);
-                
-                this.bindCanvasEvents();
-                this.saveState();
-                
-                console.log('畫布設置完成');
-            }
+  downloadCanvas(){
+    if(!this.canvas) return;
+    const link=document.createElement('a');
+    link.download='coloring.png';
+    link.href=this.canvas.toDataURL('image/png');
+    link.click();
+  }
+}
 
-            extractLines(img, canvasWidth, canvasHeight) {
-                const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = canvasWidth;
-                tempCanvas.height = canvasHeight;
-                const tempCtx = tempCanvas.getContext('2d');
-                
-                tempCtx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
-                
-                const imageData = tempCtx.getImageData(0, 0, canvasWidth, canvasHeight);
-                const data = imageData.data;
-                const lineData = tempCtx.createImageData(canvasWidth, canvasHeight);
-                const linePixels = lineData.data;
-                
-                for (let i = 0; i < data.length; i += 4) {
-                    const r = data[i];
-                    const g = data[i + 1];
-                    const b = data[i + 2];
-                    const alpha = data[i + 3];
-                    const brightness = (r + g + b) / 3;
-                    
-                    if (brightness < 128 && alpha > 128) {
-                        linePixels[i] = r;
-                        linePixels[i + 1] = g;
-                        linePixels[i + 2] = b;
-                        linePixels[i + 3] = alpha;
-                    } else {
-                        linePixels[i] = 0;
-                        linePixels[i + 1] = 0;
-                        linePixels[i + 2] = 0;
-                        linePixels[i + 3] = 0;
-                    }
-                }
-                
-                this.lineCtx.putImageData(lineData, 0, 0);
-            }
-
-            bindCanvasEvents() {
-                if (!this.canvas) return;
-
-                this.canvas.addEventListener('mousedown', (e) => this.startDrawing(e));
-                this.canvas.addEventListener('mousemove', (e) => this.draw(e));
-                this.canvas.addEventListener('mouseup', () => this.stopDrawing());
-                this.canvas.addEventListener('mouseout', () => this.stopDrawing());
-
-                // 觸控支援
-                this.canvas.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    const touch = e.touches[0];
-                    const mouseEvent = new MouseEvent('mousedown', {
-                        clientX: touch.clientX,
-                        clientY: touch.clientY
-                    });
-                    this.canvas.dispatchEvent(mouseEvent);
-                });
-
-                this.canvas.addEventListener('touchmove', (e) => {
-                    e.preventDefault();
-                    const touch = e.touches[0];
-                    const mouseEvent = new MouseEvent('mousemove', {
-                        clientX: touch.clientX,
-                        clientY: touch.clientY
-                    });
-                    this.canvas.dispatchEvent(mouseEvent);
-                });
-
-                this.canvas.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    this.stopDrawing();
-                });
-            }
-
-            getMousePos(e) {
-                const rect = this.canvas.getBoundingClientRect();
-                const scaleX = this.canvas.width / rect.width;
-                const scaleY = this.canvas.height / rect.height;
-                
-                return {
-                    x: (e.clientX - rect.left) * scaleX,
-                    y: (e.clientY - rect.top) * scaleY
-                };
-            }
-
-            startDrawing(e) {
-                this.isDrawing = true;
-                const pos = this.getMousePos(e);
-                
-                this.ctx.beginPath();
-                this.ctx.moveTo(pos.x, pos.y);
-                
-                if (this.isEraser) {
-                    this.ctx.globalCompositeOperation = 'destination-out';
-                } else {
-                    this.ctx.globalCompositeOperation = 'source-over';
-                    this.ctx.strokeStyle = this.currentColor;
-                }
-                
-                this.ctx.lineWidth = this.currentSize;
-            }
-
-            draw(e) {
-                if (!this.isDrawing) return;
-                
-                const pos = this.getMousePos(e);
-                this.ctx.lineTo(pos.x, pos.y);
-                this.ctx.stroke();
-            }
-
-            stopDrawing() {
-                if (this.isDrawing) {
-                    this.isDrawing = false;
-                    this.saveState();
-                }
-            }
-
-            saveState() {
-                if (!this.canvas) return;
-                
-                this.historyStep++;
-                if (this.historyStep < this.history.length) {
-                    this.history.length = this.historyStep;
-                }
-                this.history.push(this.canvas.toDataURL());
-                this.updateUndoRedoButtons();
-            }
-
-            undo() {
-                if (this.historyStep > 0) {
-                    this.historyStep--;
-                    this.restoreCanvasState(this.history[this.historyStep]);
-                    this.updateUndoRedoButtons();
-                }
-            }
-
-            redo() {
-                if (this.historyStep < this.history.length - 1) {
-                    this.historyStep++;
-                    this.restoreCanvasState(this.history[this.historyStep]);
-                    this.updateUndoRedoButtons();
-                }
-            }
-
-            restoreCanvasState(dataUrl) {
-                const img = new Image();
-                img.onload = () => {
-                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                    this.ctx.drawImage(img, 0, 0);
-                };
-                img.src = dataUrl;
-            }
-
-            updateUndoRedoButtons() {
-                const undoBtn = document.getElementById('undoBtn');
-                const redoBtn = document.getElementById('redoBtn');
-                
-                if (undoBtn) undoBtn.disabled = this.historyStep <= 0;
-                if (redoBtn) redoBtn.disabled = this.historyStep >= this.history.length - 1;
-            }
-        }
-
-        // 初始化遊戲
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('初始化塗色遊戲');
-            new ColoringGame();
-        });
-
-        // 防止頁面滾動
-        document.addEventListener('touchmove', function(e) {
-            if (e.target.closest('.canvas-container')) {
-                e.preventDefault();
-            }
-        }, { passive: false });
-    </script>
+window.addEventListener('DOMContentLoaded',()=>{new ColoringGame();});
+</script>
 </body>
 </html>
