@@ -36,7 +36,7 @@ body{font-family:Arial,sans-serif;background:linear-gradient(135deg,#667eea 0%,#
 .eraser{background:linear-gradient(45deg,#ff6b6b,#ee5a24);display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:12px;}
 .canvas-container{flex:1;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border-radius:20px;padding:20px;position:relative;overflow:hidden;}
 .canvas-wrapper{position:relative;max-width:100%;max-height:100%;border-radius:15px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.3);}
-#drawingCanvas{display:block;cursor:crosshair;}
+canvas{display:block;position:absolute;top:0;left:0;}
 .placeholder{color:rgba(255,255,255,0.7);text-align:center;font-size:18px;padding:40px;}
 @media(max-width:768px){.container{padding:5px;}.header{flex-direction:column;align-items:stretch;gap:15px;}.upload-section{justify-content:center;}.controls{justify-content:center;flex-wrap:wrap;}.main-content{flex-direction:column;gap:10px;}.color-palette{width:100%;order:2;}.canvas-container{order:1;min-height:60vh;}.color-grid{grid-template-columns:repeat(9,1fr);gap:6px;}.color-item{width:30px;height:30px;}.brush-size-control{flex:1;justify-content:center;}}
 </style>
@@ -81,22 +81,23 @@ body{font-family:Arial,sans-serif;background:linear-gradient(135deg,#667eea 0%,#
 <script>
 class ColoringGame {
   constructor() {
-    this.canvas = null;
-    this.ctx = null;
-    this.isDrawing = false;
-    this.currentColor = '#FF6B6B';
-    this.currentSize = 5;
-    this.history = [];
-    this.historyStep = -1;
-    this.isEraser = false;
-    this.img = null;
+    this.baseCanvas=null; // 圖片底層
+    this.drawCanvas=null; // 畫筆層
+    this.ctx=null;
+    this.isDrawing=false;
+    this.currentColor='#FF6B6B';
+    this.currentSize=5;
+    this.history=[];
+    this.historyStep=-1;
+    this.isEraser=false;
+    this.img=null;
 
     this.initializeColors();
     this.bindEvents();
     this.updateBrushPreview();
   }
 
-  initializeColors() {
+  initializeColors(){
     const colors=[
       '#FF6B6B','#FF8E53','#FF6B9D','#C44569','#F8B500','#FD79A8',
       '#6C5CE7','#A29BFE','#74B9FF','#0984E3','#00B894','#00CEC9',
@@ -116,7 +117,6 @@ class ColoringGame {
       colorItem.addEventListener('click',()=>this.selectColor(color,colorItem));
       colorGrid.appendChild(colorItem);
     });
-    // 橡皮擦
     const eraser=document.createElement('div');
     eraser.className='color-item eraser';
     eraser.textContent='擦';
@@ -125,16 +125,12 @@ class ColoringGame {
   }
 
   selectColor(color,element){
-    this.currentColor=color;
-    this.isEraser=false;
-    this.updateSelectedColor(element);
-    this.updateBrushPreview();
+    this.currentColor=color; this.isEraser=false;
+    this.updateSelectedColor(element); this.updateBrushPreview();
   }
 
   selectEraser(element){
-    this.isEraser=true;
-    this.updateSelectedColor(element);
-    this.updateBrushPreview();
+    this.isEraser=true; this.updateSelectedColor(element); this.updateBrushPreview();
   }
 
   updateSelectedColor(selectedElement){
@@ -153,12 +149,9 @@ class ColoringGame {
   }
 
   bindEvents(){
-    document.getElementById('imageUpload').addEventListener('change',(e)=>this.handleImageUpload(e));
+    document.getElementById('imageUpload').addEventListener('change',e=>this.handleImageUpload(e));
     document.getElementById('demoBtn').addEventListener('click',()=>this.loadDemoImage());
-    document.getElementById('brushSize').addEventListener('input',(e)=>{
-      this.currentSize=parseInt(e.target.value);
-      this.updateBrushPreview();
-    });
+    document.getElementById('brushSize').addEventListener('input',e=>{this.currentSize=parseInt(e.target.value); this.updateBrushPreview();});
     document.getElementById('undoBtn').addEventListener('click',()=>this.undo());
     document.getElementById('redoBtn').addEventListener('click',()=>this.redo());
     document.getElementById('clearBtn').addEventListener('click',()=>this.clearCanvas());
@@ -170,12 +163,9 @@ class ColoringGame {
     if(!file) return;
     if(!file.type.startsWith('image/')){alert('請選擇圖片檔案！');return;}
     const reader=new FileReader();
-    reader.onload=(e)=>{
+    reader.onload=e=>{
       const img=new Image();
-      img.onload=()=>{
-        this.img=img;
-        this.setupCanvas(img);
-      };
+      img.onload=()=>{this.img=img; this.setupCanvas(img);};
       img.src=e.target.result;
     };
     reader.readAsDataURL(file);
@@ -189,8 +179,7 @@ class ColoringGame {
     ctx.strokeStyle='black'; ctx.lineWidth=3; ctx.fillStyle='white';
     for(let i=0;i<6;i++){
       const angle=(i*Math.PI)/3;
-      ctx.beginPath();
-      ctx.ellipse(200+Math.cos(angle)*40,200+Math.sin(angle)*40,30,15,angle,0,2*Math.PI);
+      ctx.beginPath(); ctx.ellipse(200+Math.cos(angle)*40,200+Math.sin(angle)*40,30,15,angle,0,2*Math.PI);
       ctx.fill(); ctx.stroke();
     }
     ctx.beginPath(); ctx.arc(200,200,25,0,2*Math.PI); ctx.fill(); ctx.stroke();
@@ -203,114 +192,72 @@ class ColoringGame {
   }
 
   setupCanvas(img){
-    const canvasWrapper=document.getElementById('canvasWrapper');
-    const container=canvasWrapper.parentElement;
-    const containerRect=container.getBoundingClientRect();
-    const availableWidth=containerRect.width-40;
-    const availableHeight=containerRect.height-40;
-    let canvasWidth,canvasHeight;
+    const wrapper=document.getElementById('canvasWrapper');
+    const rect=wrapper.getBoundingClientRect();
+    let w=rect.width-40, h=rect.height-40;
     const imgRatio=img.width/img.height;
-    const containerRatio=availableWidth/availableHeight;
-    if(imgRatio>containerRatio){canvasWidth=Math.min(availableWidth,img.width); canvasHeight=canvasWidth/imgRatio;}
-    else{canvasHeight=Math.min(availableHeight,img.height); canvasWidth=canvasHeight*imgRatio;}
+    const containerRatio=w/h;
+    if(imgRatio>containerRatio){w=Math.min(w,img.width); h=w/imgRatio;}
+    else{h=Math.min(h,img.height); w=h*imgRatio;}
 
-    canvasWrapper.innerHTML='';
-    this.canvas=document.createElement('canvas');
-    this.canvas.id='drawingCanvas';
-    this.canvas.width=canvasWidth; this.canvas.height=canvasHeight;
-    this.canvas.style.position='relative';
-    this.canvas.style.zIndex='1';
-    this.ctx=this.canvas.getContext('2d');
+    wrapper.innerHTML='';
+    // 底層 canvas
+    this.baseCanvas=document.createElement('canvas');
+    this.baseCanvas.width=w; this.baseCanvas.height=h;
+    this.baseCanvas.style.zIndex=0;
+    this.baseCanvas.getContext('2d').drawImage(img,0,0,w,h);
+    wrapper.appendChild(this.baseCanvas);
+
+    // 上層 canvas
+    this.drawCanvas=document.createElement('canvas');
+    this.drawCanvas.width=w; this.drawCanvas.height=h;
+    this.drawCanvas.style.zIndex=1;
+    wrapper.appendChild(this.drawCanvas);
+    this.ctx=this.drawCanvas.getContext('2d');
     this.ctx.lineCap='round'; this.ctx.lineJoin='round';
-    // 畫上圖片線條
-    this.ctx.clearRect(0,0,canvasWidth,canvasHeight);
-    this.ctx.drawImage(img,0,0,canvasWidth,canvasHeight);
-
-    canvasWrapper.appendChild(this.canvas);
     this.bindCanvasEvents();
     this.saveState();
   }
 
   bindCanvasEvents(){
-    if(!this.canvas) return;
-    const getPos=(e)=>{
-      const rect=this.canvas.getBoundingClientRect();
-      const scaleX=this.canvas.width/rect.width;
-      const scaleY=this.canvas.height/rect.height;
-      return{
-        x:(e.clientX-rect.left)*scaleX,
-        y:(e.clientY-rect.top)*scaleY
-      };
+    if(!this.drawCanvas) return;
+    const getPos=e=>{
+      const rect=this.drawCanvas.getBoundingClientRect();
+      const scaleX=this.drawCanvas.width/rect.width;
+      const scaleY=this.drawCanvas.height/rect.height;
+      return{x:(e.clientX-rect.left)*scaleX,y:(e.clientY-rect.top)*scaleY};
     };
-    this.canvas.addEventListener('mousedown',e=>this.startDrawing(getPos(e)));
-    this.canvas.addEventListener('mousemove',e=>this.draw(getPos(e)));
-    this.canvas.addEventListener('mouseup',()=>this.stopDrawing());
-    this.canvas.addEventListener('mouseout',()=>this.stopDrawing());
-    this.canvas.addEventListener('touchstart',e=>{e.preventDefault();const t=e.touches[0];this.startDrawing(getPos(t));});
-    this.canvas.addEventListener('touchmove',e=>{e.preventDefault();const t=e.touches[0];this.draw(getPos(t));});
-    this.canvas.addEventListener('touchend',e=>{e.preventDefault();this.stopDrawing();});
+    this.drawCanvas.addEventListener('mousedown',e=>{this.isDrawing=true; const pos=getPos(e); this.ctx.beginPath(); this.ctx.moveTo(pos.x,pos.y);});
+    this.drawCanvas.addEventListener('mousemove',e=>{if(!this.isDrawing) return; const pos=getPos(e); this.draw(pos);});
+    this.drawCanvas.addEventListener('mouseup',()=>{if(this.isDrawing){this.isDrawing=false; this.saveState();}});
+    this.drawCanvas.addEventListener('mouseout',()=>{if(this.isDrawing){this.isDrawing=false; this.saveState();}});
+    this.drawCanvas.addEventListener('touchstart',e=>{e.preventDefault();const t=e.touches[0];this.isDrawing=true;const pos=getPos(t); this.ctx.beginPath(); this.ctx.moveTo(pos.x,pos.y);});
+    this.drawCanvas.addEventListener('touchmove',e=>{e.preventDefault();if(!this.isDrawing) return;const t=e.touches[0];const pos=getPos(t); this.draw(pos);});
+    this.drawCanvas.addEventListener('touchend',e=>{e.preventDefault();if(this.isDrawing){this.isDrawing=false;this.saveState();}});
   }
 
-  startDrawing(pos){this.isDrawing=true;this.ctx.beginPath();this.ctx.moveTo(pos.x,pos.y);}
   draw(pos){
-    if(!this.isDrawing) return;
-    this.ctx.strokeStyle=this.isEraser?'white':this.currentColor;
+    this.ctx.strokeStyle=this.isEraser?'rgba(255,255,255,1)':this.currentColor;
     this.ctx.lineWidth=this.currentSize;
     this.ctx.globalCompositeOperation=this.isEraser?'destination-out':'source-over';
     this.ctx.lineTo(pos.x,pos.y);
     this.ctx.stroke();
   }
-  stopDrawing(){if(this.isDrawing){this.isDrawing=false;this.saveState();}}
 
   saveState(){
-    if(!this.canvas) return;
+    if(!this.drawCanvas) return;
     this.history=this.history.slice(0,this.historyStep+1);
-    this.history.push(this.canvas.toDataURL());
+    this.history.push(this.drawCanvas.toDataURL());
     this.historyStep++;
     this.updateUndoRedoButtons();
   }
 
-  undo(){
-    if(this.historyStep>0){
-      this.historyStep--;
-      this.restoreState(this.history[this.historyStep]);
-      this.updateUndoRedoButtons();
-    }
-  }
-
-  redo(){
-    if(this.historyStep<this.history.length-1){
-      this.historyStep++;
-      this.restoreState(this.history[this.historyStep]);
-      this.updateUndoRedoButtons();
-    }
-  }
-
-  restoreState(dataURL){
-    const img=new Image();
-    img.onload=()=>{this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);this.ctx.drawImage(img,0,0);}
-    img.src=dataURL;
-  }
-
-  updateUndoRedoButtons(){
-    document.getElementById('undoBtn').disabled=this.historyStep<=0;
-    document.getElementById('redoBtn').disabled=this.historyStep>=this.history.length-1;
-  }
-
-  clearCanvas(){
-    if(!this.canvas) return;
-    this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
-    if(this.img) this.ctx.drawImage(this.img,0,0,this.canvas.width,this.canvas.height);
-    this.saveState();
-  }
-
-  downloadCanvas(){
-    if(!this.canvas) return;
-    const link=document.createElement('a');
-    link.download='coloring.png';
-    link.href=this.canvas.toDataURL('image/png');
-    link.click();
-  }
+  undo(){if(this.historyStep>0){this.historyStep--; this.restoreState(this.history[this.historyStep]); this.updateUndoRedoButtons();}}
+  redo(){if(this.historyStep<this.history.length-1){this.historyStep++; this.restoreState(this.history[this.historyStep]); this.updateUndoRedoButtons();}}
+  restoreState(dataURL){const img=new Image(); img.onload=()=>{this.ctx.clearRect(0,0,this.drawCanvas.width,this.drawCanvas.height); this.ctx.drawImage(img,0,0);}; img.src=dataURL;}
+  updateUndoRedoButtons(){document.getElementById('undoBtn').disabled=this.historyStep<=0; document.getElementById('redoBtn').disabled=this.historyStep>=this.history.length-1;}
+  clearCanvas(){if(!this.drawCanvas) return; this.ctx.clearRect(0,0,this.drawCanvas.width,this.drawCanvas.height); this.saveState();}
+  downloadCanvas(){if(!this.drawCanvas||!this.baseCanvas) return; const link=document.createElement('a'); const mergeCanvas=document.createElement('canvas'); mergeCanvas.width=this.baseCanvas.width; mergeCanvas.height=this.baseCanvas.height; const mctx=mergeCanvas.getContext('2d'); mctx.drawImage(this.baseCanvas,0,0); mctx.drawImage(this.drawCanvas,0,0); link.download='coloring.png'; link.href=mergeCanvas.toDataURL('image/png'); link.click();}
 }
 
 window.addEventListener('DOMContentLoaded',()=>{new ColoringGame();});
