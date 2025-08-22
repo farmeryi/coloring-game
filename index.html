@@ -147,6 +147,71 @@
     width: 100px;
   }
   
+  .sample-images-section {
+    margin: 15px 0;
+    padding: 15px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .section-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  
+  .sample-images-container {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .sample-image-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+  }
+  
+  .sample-image-item:hover {
+    background-color: #f0f8ff;
+    border-color: #2196F3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  }
+  
+  .sample-thumbnail {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    background: white;
+    padding: 4px;
+  }
+  
+  .sample-label {
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
+    text-align: center;
+  }
+  
+  .sample-image-item:hover .sample-label {
+    color: #2196F3;
+    font-weight: bold;
+  }
+  
   @media (max-width: 768px) { 
     .color-btn { width: 25px; height: 25px; }
     .main-container {
@@ -155,6 +220,13 @@
     .upload-btn, .control-btn {
       font-size: 12px;
       padding: 6px 10px;
+    }
+    .sample-thumbnail {
+      width: 70px;
+      height: 70px;
+    }
+    .sample-images-container {
+      gap: 10px;
     }
   }
   
@@ -168,8 +240,19 @@
       margin: 5px 0;
       padding: 8px;
     }
+    .sample-images-section {
+      margin: 10px 0;
+      padding: 10px;
+    }
     .main-container {
       padding: 10px 0 20px 0;
+    }
+    .sample-thumbnail {
+      width: 60px;
+      height: 60px;
+    }
+    .section-title {
+      font-size: 14px;
     }
   }
 </style>
@@ -203,6 +286,20 @@
     <button class="control-btn" onclick="redo()">重做</button>
     <button class="control-btn" onclick="clearDraw()">清除畫筆</button>
     <button class="control-btn" onclick="downloadCanvas()">下載合成圖</button>
+  </div>
+
+  <div class="sample-images-section">
+    <div class="section-title">範例圖片</div>
+    <div class="sample-images-container">
+      <div class="sample-image-item" onclick="loadSampleImage('https://raw.githubusercontent.com/farmeryi/coloring-game/5f97cd68ce2b0dcd008401d700b110fbadfb685c/seed1.png')">
+        <img src="https://raw.githubusercontent.com/farmeryi/coloring-game/5f97cd68ce2b0dcd008401d700b110fbadfb685c/seed1.png" alt="範例圖片 1" class="sample-thumbnail">
+        <span class="sample-label">範例 1</span>
+      </div>
+      <div class="sample-image-item" onclick="loadSampleImage('https://raw.githubusercontent.com/farmeryi/coloring-game/5f97cd68ce2b0dcd008401d700b110fbadfb685c/seed2.png')">
+        <img src="https://raw.githubusercontent.com/farmeryi/coloring-game/5f97cd68ce2b0dcd008401d700b110fbadfb685c/seed2.png" alt="範例圖片 2" class="sample-thumbnail">
+        <span class="sample-label">範例 2</span>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -742,51 +839,4 @@ window.addEventListener('load', function() {
     drawCanvas: drawCanvas,
     overlayCanvas: overlayCanvas,
     bgCanvasStyle: bgCanvas.style.cssText,
-    drawCanvasStyle: drawCanvas.style.cssText
-  });
-});
-
-// 觸控事件處理
-document.addEventListener('touchmove', function(e) {
-  if(e.target.tagName === 'CANVAS') {
-    // 阻止所有預設行為，讓我們完全控制
-    e.preventDefault();
-  }
-}, {passive: false});
-
-// 觸控開始處理
-document.addEventListener('touchstart', function(e) {
-  if(e.target.tagName === 'CANVAS') {
-    e.preventDefault();
-    if(e.touches.length >= 2) {
-      multiTouchActive = true;
-      justFinishedMultiTouch = false;
-    }
-  }
-}, {passive: false});
-
-// 觸控結束處理
-document.addEventListener('touchend', function(e) {
-  if(e.target.tagName === 'CANVAS') {
-    e.preventDefault();
-    if(e.touches.length === 0) {
-      // 所有手指都離開了
-      if(isPinching) {
-        // 剛結束雙指操作，設置保護期
-        setTimeout(() => {
-          justFinishedMultiTouch = false;
-          multiTouchActive = false;
-        }, 300);
-      } else {
-        // 單指操作結束，立即重置
-        multiTouchActive = false;
-        justFinishedMultiTouch = false;
-      }
-    }
-  }
-}, {passive: false});
-
-</script>
-
-</body>
-</html>
+ 
