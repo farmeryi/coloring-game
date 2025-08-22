@@ -839,4 +839,51 @@ window.addEventListener('load', function() {
     drawCanvas: drawCanvas,
     overlayCanvas: overlayCanvas,
     bgCanvasStyle: bgCanvas.style.cssText,
- 
+    drawCanvasStyle: drawCanvas.style.cssText
+  });
+});
+
+// 觸控事件處理
+document.addEventListener('touchmove', function(e) {
+  if(e.target.tagName === 'CANVAS') {
+    // 阻止所有預設行為，讓我們完全控制
+    e.preventDefault();
+  }
+}, {passive: false});
+
+// 觸控開始處理
+document.addEventListener('touchstart', function(e) {
+  if(e.target.tagName === 'CANVAS') {
+    e.preventDefault();
+    if(e.touches.length >= 2) {
+      multiTouchActive = true;
+      justFinishedMultiTouch = false;
+    }
+  }
+}, {passive: false});
+
+// 觸控結束處理
+document.addEventListener('touchend', function(e) {
+  if(e.target.tagName === 'CANVAS') {
+    e.preventDefault();
+    if(e.touches.length === 0) {
+      // 所有手指都離開了
+      if(isPinching) {
+        // 剛結束雙指操作，設置保護期
+        setTimeout(() => {
+          justFinishedMultiTouch = false;
+          multiTouchActive = false;
+        }, 300);
+      } else {
+        // 單指操作結束，立即重置
+        multiTouchActive = false;
+        justFinishedMultiTouch = false;
+      }
+    }
+  }
+}, {passive: false});
+
+</script>
+
+</body>
+</html>
