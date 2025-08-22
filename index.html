@@ -11,7 +11,8 @@
     font-family: Arial, sans-serif; 
     background: #f0f0f0;
     min-height: 100vh;
-    overflow-x: hidden;
+    overflow-x: auto;
+    touch-action: auto;
   }
   
   .header {
@@ -62,16 +63,23 @@
     align-items: center;
     justify-content: center;
     margin: 0;
+    touch-action: none;
+    overflow: visible;
+    min-height: 400px;
   }
   
   canvas { 
     border: 2px solid #333;
-    position: absolute; 
-    top: 0; 
-    left: 0; 
+    position: absolute !important; 
+    top: 0 !important; 
+    left: 0 !important; 
     touch-action: none;
     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     border-radius: 5px;
+    transform-origin: center center;
+    transition: none;
+    display: block !important;
+    z-index: 1;
   }
   
   .upload-section { 
@@ -188,8 +196,8 @@
     <button class="control-btn" onclick="setEraser()">橡皮擦</button>
     <div class="slider-container">
       <label>粗細：</label>
-      <input type="range" id="lineWidth" min="1" max="20" value="3" onchange="changeLineWidth(this.value)">
-      <span id="lineWidthValue">3</span>
+      <input type="range" id="lineWidth" min="1" max="20" value="1" onchange="changeLineWidth(this.value)">
+      <span id="lineWidthValue">1</span>
     </div>
     <button class="control-btn" onclick="undo()">復原</button>
     <button class="control-btn" onclick="redo()">重做</button>
@@ -217,13 +225,38 @@ const overlayCtx = overlayCanvas.getContext("2d");
 
 let drawing = false;
 let currentColor = "black";
-let lineWidth = 3;
+let lineWidth = 1;
 let isEraser = false;
 let history = [];
 let redoHistory = [];
 let lastPos = {x:0,y:0};
 let bgImage = null;
 let overlayImage = null;
+
+// 雙指手勢相關變數
+let lastTouchDistance = 0;
+let lastTouchCenter = {x: 0, y: 0};
+let initialPinchDistance = 0;
+let isPinching = false;
+let touchStartTime = 0;
+let multiTouchActive = false;
+let lastTouchEndTime = 0;
+let justFinishedMultiTouch = false;
+
+// 畫布縮放和位置相關變數
+let canvasScale = 1;
+let canvasOffsetX = 0;
+let canvasOffsetY = 0;
+let minScale = 0.5;
+let maxScale = 3;
+
+// 更新畫布變換
+function updateCanvasTransform() {
+  const transform = `translate(${canvasOffsetX}px, ${canvasOffsetY}px) scale(${canvasScale})`;
+  [bgCanvas, drawCanvas, overlayCanvas].forEach(canvas => {
+    canvas.style.transform = transform;
+  });
+}
 
 // 響應式畫布調整
 function resizeCanvas(){
@@ -264,7 +297,20 @@ function resizeCanvas(){
     c.height = height;
     c.style.width = width + 'px';
     c.style.height = height + 'px';
+    // 確保畫布可見
+    c.style.display = 'block';
+    c.style.position = 'absolute';
+    c.style.top = '0px';
+    c.style.left = '0px';
   });
+  
+  // 重置縮放和位置
+  canvasScale = 1;
+  canvasOffsetX = 0;
+  canvasOffsetY = 0;
+  
+  // 確保變換正確應用
+  updateCanvasTransform();
   
   // 設置白色預設背景
   bgCtx.fillStyle = '#FFFFFF';
@@ -280,44 +326,186 @@ window.addEventListener('orientationchange', function() {
   setTimeout(resizeCanvas, 100);
 });
 
+// 計算兩點間距離
+function getTouchDistance(touch1, touch2) {
+  const dx = touch1.clientX - touch2.clientX;
+  const dy = touch1.clientY - touch2.clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+// 計算兩點中心點
+function getTouchCenter(touch1, touch2) {
+  return {
+    x: (touch1.clientX + touch2.clientX) / 2,
+    y: (touch1.clientY + touch2.clientY) / 2
+  };
+}
+
 // 觸控與滑鼠事件
 function getPos(e){
   const rect = drawCanvas.getBoundingClientRect();
   let clientX, clientY;
-  if(e.touches){ clientX=e.touches[0].clientX; clientY=e.touches[0].clientY;}
-  else{ clientX=e.clientX; clientY=e.clientY;}
-  return { x:(clientX-rect.left)*(drawCanvas.width/rect.width),
-           y:(clientY-rect.top)*(drawCanvas.height/rect.height)};
+  if(e.touches && e.touches.length === 1){ 
+    clientX = e.touches[0].clientX; 
+    clientY = e.touches[0].clientY;
+  } else { 
+    clientX = e.clientX; 
+    clientY = e.clientY;
+  }
+  
+  // 考慮畫布的縮放和偏移
+  const x = (clientX - rect.left) / canvasScale;
+  const y = (clientY - rect.top) / canvasScale;
+  
+  return { 
+    x: x * (drawCanvas.width / (rect.width / canvasScale)),
+    y: y * (drawCanvas.height / (rect.height / canvasScale))
+  };
 }
 
 function startDraw(e){
-  e.preventDefault();
-  drawing = true;
-  lastPos = getPos(e);
-  ctx.beginPath();
-  ctx.moveTo(lastPos.x,lastPos.y);
+  touchStartTime = Date.now();
+  
+  // 檢查是否為雙指觸控
+  if(e.touches && e.touches.length >= 2) {
+    // 雙指操作 - 不阻止預設行為讓瀏覽器處理縮放
+    isPinching = true;
+    multiTouchActive = true;
+    justFinishedMultiTouch = false;
+    
+    // 記錄雙指初始狀態
+    const touch1 = e.touches[0];
+    const touch2 = e.touches[1];
+    lastTouchDistance = getTouchDistance(touch1, touch2);
+    lastTouchCenter = getTouchCenter(touch1, touch2);
+    
+    // 停止任何正在進行的繪圖
+    if(drawing) {
+      drawing = false;
+      ctx.closePath();
+    }
+    return;
+  }
+  
+  // 單指觸控的處理
+  if(e.touches && e.touches.length === 1) {
+    // 檢查是否剛結束雙指操作
+    if(justFinishedMultiTouch) {
+      return; // 在保護期內，不開始繪圖
+    }
+    
+    // 開始單指繪圖
+    e.preventDefault();
+    drawing = true;
+    multiTouchActive = false;
+    lastPos = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(lastPos.x, lastPos.y);
+    return;
+  }
+  
+  // 滑鼠事件（桌面版）
+  if(!e.touches) {
+    e.preventDefault();
+    drawing = true;
+    multiTouchActive = false;
+    lastPos = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(lastPos.x, lastPos.y);
+  }
 }
 
 function draw(e){
-  if(!drawing) return;
-  e.preventDefault();
+  // 雙指手勢處理 - 縮放和拖動畫布
+  if(e.touches && e.touches.length >= 2) {
+    isPinching = true;
+    multiTouchActive = true;
+    
+    // 停止任何正在進行的繪圖
+    if(drawing) {
+      drawing = false;
+      ctx.closePath();
+    }
+    
+    const touch1 = e.touches[0];
+    const touch2 = e.touches[1];
+    const currentDistance = getTouchDistance(touch1, touch2);
+    const currentCenter = getTouchCenter(touch1, touch2);
+    
+    if(lastTouchDistance > 0 && lastTouchCenter.x > 0) {
+      // 計算縮放
+      const scaleChange = currentDistance / lastTouchDistance;
+      const newScale = canvasScale * scaleChange;
+      
+      // 限制縮放範圍
+      if(newScale >= minScale && newScale <= maxScale) {
+        canvasScale = newScale;
+      }
+      
+      // 計算拖動
+      const deltaX = currentCenter.x - lastTouchCenter.x;
+      const deltaY = currentCenter.y - lastTouchCenter.y;
+      
+      canvasOffsetX += deltaX;
+      canvasOffsetY += deltaY;
+      
+      // 更新畫布變換
+      updateCanvasTransform();
+    }
+    
+    lastTouchDistance = currentDistance;
+    lastTouchCenter = currentCenter;
+    return; // 不進行繪圖
+  }
+  
+  // 單指繪圖
+  if(!drawing || isPinching) return;
+  
   const pos = getPos(e);
   ctx.lineWidth = lineWidth;
   ctx.lineCap = "round";
   ctx.strokeStyle = currentColor;
   ctx.globalCompositeOperation = isEraser ? 'destination-out' : 'source-over';
   ctx.beginPath();
-  ctx.moveTo(lastPos.x,lastPos.y);
-  ctx.lineTo(pos.x,pos.y);
+  ctx.moveTo(lastPos.x, lastPos.y);
+  ctx.lineTo(pos.x, pos.y);
   ctx.stroke();
   lastPos = pos;
 }
 
-function stopDraw(){
-  if(!drawing) return;
-  drawing=false;
-  ctx.closePath();
-  saveHistory();
+function stopDraw(e){
+  lastTouchEndTime = Date.now();
+  
+  // 雙指操作結束
+  if(isPinching) {
+    isPinching = false;
+    lastTouchDistance = 0;
+    justFinishedMultiTouch = true;
+    
+    // 設置保護期，防止立即切換到單指繪圖
+    setTimeout(() => {
+      justFinishedMultiTouch = false;
+      multiTouchActive = false;
+    }, 300);
+    return;
+  }
+  
+  // 檢查是否還有觸控點
+  if(e.touches && e.touches.length > 0) {
+    return;
+  }
+  
+  // 單指繪圖結束
+  if(drawing) {
+    drawing = false;
+    ctx.closePath();
+    saveHistory();
+  }
+  
+  // 單指操作結束，立即重置狀態
+  if(!e.touches || e.touches.length === 0) {
+    multiTouchActive = false;
+  }
 }
 
 // 事件監聽器綁定
@@ -544,13 +732,57 @@ colors.forEach(c=>{
 });
 
 // 初始化
-resizeCanvas();
-saveHistory();
+window.addEventListener('load', function() {
+  resizeCanvas();
+  saveHistory();
+  
+  // 確保畫布可見
+  console.log('Canvas elements:', {
+    bgCanvas: bgCanvas,
+    drawCanvas: drawCanvas,
+    overlayCanvas: overlayCanvas,
+    bgCanvasStyle: bgCanvas.style.cssText,
+    drawCanvasStyle: drawCanvas.style.cssText
+  });
+});
 
-// 防止頁面滾動
+// 觸控事件處理
 document.addEventListener('touchmove', function(e) {
   if(e.target.tagName === 'CANVAS') {
+    // 阻止所有預設行為，讓我們完全控制
     e.preventDefault();
+  }
+}, {passive: false});
+
+// 觸控開始處理
+document.addEventListener('touchstart', function(e) {
+  if(e.target.tagName === 'CANVAS') {
+    e.preventDefault();
+    if(e.touches.length >= 2) {
+      multiTouchActive = true;
+      justFinishedMultiTouch = false;
+    }
+  }
+}, {passive: false});
+
+// 觸控結束處理
+document.addEventListener('touchend', function(e) {
+  if(e.target.tagName === 'CANVAS') {
+    e.preventDefault();
+    if(e.touches.length === 0) {
+      // 所有手指都離開了
+      if(isPinching) {
+        // 剛結束雙指操作，設置保護期
+        setTimeout(() => {
+          justFinishedMultiTouch = false;
+          multiTouchActive = false;
+        }, 300);
+      } else {
+        // 單指操作結束，立即重置
+        multiTouchActive = false;
+        justFinishedMultiTouch = false;
+      }
+    }
   }
 }, {passive: false});
 
