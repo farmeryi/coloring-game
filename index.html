@@ -347,6 +347,21 @@ let canvasOffsetY = 0;
 let minScale = 0.5;
 let maxScale = 3;
 
+// 計算兩點間距離
+function getTouchDistance(touch1, touch2) {
+  const dx = touch1.clientX - touch2.clientX;
+  const dy = touch1.clientY - touch2.clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+// 計算兩點中心點
+function getTouchCenter(touch1, touch2) {
+  return {
+    x: (touch1.clientX + touch2.clientX) / 2,
+    y: (touch1.clientY + touch2.clientY) / 2
+  };
+}
+
 // 更新畫布變換
 function updateCanvasTransform() {
   const transform = `translate(${canvasOffsetX}px, ${canvasOffsetY}px) scale(${canvasScale})`;
@@ -422,21 +437,6 @@ window.addEventListener('resize', resizeCanvas);
 window.addEventListener('orientationchange', function() {
   setTimeout(resizeCanvas, 100);
 });
-
-// 計算兩點間距離
-function getTouchDistance(touch1, touch2) {
-  const dx = touch1.clientX - touch2.clientX;
-  const dy = touch1.clientY - touch2.clientY;
-  return Math.sqrt(dx * dx + dy * dy);
-}
-
-// 計算兩點中心點
-function getTouchCenter(touch1, touch2) {
-  return {
-    x: (touch1.clientX + touch2.clientX) / 2,
-    y: (touch1.clientY + touch2.clientY) / 2
-  };
-}
 
 // 觸控與滑鼠事件
 function getPos(e){
@@ -678,16 +678,20 @@ function uploadBackgroundImage(event){
   const file = event.target.files[0];
   if(!file) return;
   
+  // 檢查文件類型
   if(!file.type.startsWith('image/')){
     alert('請選擇圖片文件！');
     event.target.value = '';
     return;
   }
   
+  console.log('上傳背景圖片:', file.name, file.type, file.size);
+  
   const reader = new FileReader();
   reader.onload = function(e) {
     const img = new Image();
     img.onload = function() {
+      console.log('背景圖片載入成功:', img.width, 'x', img.height);
       bgImage = img;
       resizeCanvas(); // 重新調整畫布尺寸以配合圖片
     };
@@ -704,7 +708,7 @@ function uploadBackgroundImage(event){
   event.target.value = '';
 }
 
-// 上傳覆蓋圖片
+// 上傳覆蓋圖片（去背 PNG）- 支援文件和網路圖片
 function uploadOverlayImage(event){
   const file = event.target.files[0];
   if(!file) return;
@@ -715,24 +719,138 @@ function uploadOverlayImage(event){
     return;
   }
   
+  console.log('上傳去背圖片:', file.name, file.type, file.size);
+  
   const reader = new FileReader();
   reader.onload = function(e) {
     const img = new Image();
     img.onload = function() {
+      console.log('去背圖片載入成功:', img.width, 'x', img.height);
       overlayImage = img;
       redrawOverlay();
+      
+      // 清除範例圖片的選中狀態
+      clearSampleSelection();
     };
     img.onerror = function() {
+      console.error('圖片載入失敗');
       alert('圖片載入失敗，請檢查文件格式！');
     };
     img.src = e.target.result;
   };
   reader.onerror = function() {
+    console.error('文件讀取失敗');
     alert('文件讀取失敗！');
   };
   reader.readAsDataURL(file);
   
+  // 清空輸入框
   event.target.value = '';
+}
+
+// 載入網路圖片到覆蓋層（去背層）
+function loadNetworkImageToOverlay(imageUrl, imageId = null) {
+  console.log('=== 載入網路圖片到去背層 ===');
+  console.log('圖片網址:', imageUrl);
+  console.log('圖片ID:', imageId);
+  
+  const img = new Image();
+  
+  img.onload = function() {
+    console.log('✅ 網路圖片載入成功!', {
+      url: imageUrl,
+      width: img.width,
+      height: img.height,
+      complete: img.complete
+    });
+    
+    // 使用與上傳檔案相同的邏輯
+    overlayImage = img;
+    redrawOverlay();
+    
+    // 更新選中狀態
+    if(imageId) {
+      updateSampleSelection(imageId);
+    }
+    
+    console.log('✅ 網路圖片已載入到去背層！');
+  };
+  
+  img.onerror = function(error) {
+    console.error('❌ 網路圖片載入失敗:', error);
+    
+    // 嘗試備用網址格式
+    const alternativeUrl = imageUrl.includes('github.com') 
+      ? imageUrl.replace('github.com', 'raw.githubusercontent.com').replace('/raw/', '/')
+      : imageUrl.replace('raw.githubusercontent.com', 'github.com').replace(/\/([^\/]+)\/([^\/]+)\/(.+)/, '/$1/$2/raw/$3');
+    
+    console.log('嘗試備用網址:', alternativeUrl);
+    
+    if(alternativeUrl !== imageUrl) {
+      const img2 = new Image();
+      img2.onload = function() {
+        console.log('✅ 備用網址載入成功!');
+        overlayImage = img2;
+        redrawOverlay();
+        if(imageId) updateSampleSelection(imageId);
+      };
+      img2.onerror = function() {
+        console.error('❌ 備用網址也載入失敗');
+        alert('範例圖片載入失敗，請檢查網路連線或稍後再試！');
+      };
+      img2.src = alternativeUrl;
+    } else {
+      alert('範例圖片載入失敗，請檢查網路連線或稍後再試！');
+    }
+  };
+  
+  // 開始載入
+  img.src = imageUrl;
+}
+
+// 更新範例圖片選中狀態
+function updateSampleSelection(imageId) {
+  // 清除所有選中狀態
+  clearSampleSelection();
+  
+  // 標記當前選中的項目
+  const items = document.querySelectorAll('.sample-image-item');
+  const currentItem = items[imageId - 1];
+  if(currentItem) {
+    currentItem.style.borderColor = '#4CAF50';
+    currentItem.style.backgroundColor = '#f0f8f0';
+    console.log('已標記選中狀態，圖片ID:', imageId);
+  }
+}
+
+// 清除範例圖片選中狀態
+function clearSampleSelection() {
+  const items = document.querySelectorAll('.sample-image-item');
+  items.forEach(item => {
+    item.style.borderColor = 'transparent';
+    item.style.backgroundColor = '';
+  });
+}
+
+// 測試用的簡化載入函數 - 現在使用統一的載入邏輯
+function loadSampleImageTest(imageId) {
+  console.log('=== 點選範例圖片 ===');
+  console.log('圖片ID:', imageId);
+  
+  // 定義範例圖片網址
+  const imageUrls = {
+    1: 'https://github.com/farmeryi/coloring-game/raw/5f97cd68ce2b0dcd008401d700b110fbadfb685c/seed1.png',
+    2: 'https://github.com/farmeryi/coloring-game/raw/5f97cd68ce2b0dcd008401d700b110fbadfb685c/seed2.png'
+  };
+  
+  const imageUrl = imageUrls[imageId];
+  if (!imageUrl) {
+    console.error('找不到對應的圖片網址');
+    return;
+  }
+  
+  // 使用統一的載入邏輯
+  loadNetworkImageToOverlay(imageUrl, imageId);
 }
 
 // 清除背景
@@ -782,17 +900,37 @@ function redrawDrawLayer(){
   }
 }
 
-// 重新繪製覆蓋層
+// 重新繪製覆蓋層（去背圖）- 增強版本
 function redrawOverlay(){
-  overlayCtx.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);
+  console.log('開始重新繪製覆蓋層...');
+  
+  // 清除覆蓋層
+  overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
   
   if(overlayImage) {
+    console.log('繪製覆蓋圖片到去背層', {
+      imageWidth: overlayImage.width,
+      imageHeight: overlayImage.height,
+      canvasWidth: overlayCanvas.width,
+      canvasHeight: overlayCanvas.height
+    });
+    
     try {
-      // 保持原始尺寸和透明度，填滿整個畫布
+      // 將圖片完全填滿畫布
       overlayCtx.drawImage(overlayImage, 0, 0, overlayCanvas.width, overlayCanvas.height);
+      console.log('✓ 覆蓋圖片繪製完成');
+      
+      // 驗證繪製結果
+      const imageData = overlayCtx.getImageData(0, 0, 10, 10);
+      const hasContent = Array.from(imageData.data).some(value => value > 0);
+      console.log('畫布內容驗證:', hasContent ? '有內容' : '空白');
+      
     } catch(e) {
-      alert('繪製覆蓋圖片時發生錯誤！');
+      console.error('✗ 繪製覆蓋圖片時發生錯誤:', e);
+      alert('繪製覆蓋圖片時發生錯誤：' + e.message);
     }
+  } else {
+    console.log('沒有覆蓋圖片需要繪製');
   }
 }
 
@@ -831,26 +969,6 @@ colors.forEach(c=>{
   btn.onclick=()=>setColor(c);
   btn.title = c;
   palette.appendChild(btn);
-});
-
-// 初始化
-window.addEventListener('load', function() {
-  resizeCanvas();
-  saveHistory();
-  
-  // 確保畫布可見
-  console.log('Canvas elements:', {
-    bgCanvas: bgCanvas,
-    drawCanvas: drawCanvas,
-    overlayCanvas: overlayCanvas,
-    bgCanvasStyle: bgCanvas.style.cssText,
-    drawCanvasStyle: drawCanvas.style.cssText
-  });
-  
-  // 測試範例圖片載入
-  console.log('範例圖片網址測試:');
-  console.log('seed1:', 'https://raw.githubusercontent.com/farmeryi/coloring-game/5f97cd68ce2b0dcd008401d700b110fbadfb685c/seed1.png');
-  console.log('seed2:', 'https://raw.githubusercontent.com/farmeryi/coloring-game/5f97cd68ce2b0dcd008401d700b110fbadfb685c/seed2.png');
 });
 
 // 觸控事件處理
@@ -892,6 +1010,34 @@ document.addEventListener('touchend', function(e) {
     }
   }
 }, {passive: false});
+
+// 初始化
+window.addEventListener('load', function() {
+  resizeCanvas();
+  saveHistory();
+  
+  // 確保畫布可見
+  console.log('Canvas 初始化狀態:', {
+    bgCanvas: bgCanvas ? '✓' : '✗',
+    drawCanvas: drawCanvas ? '✓' : '✗',
+    overlayCanvas: overlayCanvas ? '✓' : '✗',
+    overlayCanvasSize: `${overlayCanvas.width}x${overlayCanvas.height}`
+  });
+  
+  // 測試範例圖片網址
+  const testUrls = [
+    'https://github.com/farmeryi/coloring-game/raw/5f97cd68ce2b0dcd008401d700b110fbadfb685c/seed1.png',
+    'https://github.com/farmeryi/coloring-game/raw/5f97cd68ce2b0dcd008401d700b110fbadfb685c/seed2.png'
+  ];
+  
+  console.log('範例圖片網址:');
+  testUrls.forEach((url, index) => {
+    console.log(`範例 ${index + 1}:`, url);
+  });
+  
+  // 測試載入第一個範例圖片（僅用於測試）
+  console.log('系統準備完成，可以點選範例圖片進行測試');
+});
 
 </script>
 
