@@ -291,11 +291,11 @@
   <div class="sample-images-section">
     <div class="section-title">範例圖片</div>
     <div class="sample-images-container">
-      <div class="sample-image-item" onclick="loadSampleImage('https://github.com/farmeryi/coloring-game/raw/5f97cd68ce2b0dcd008401d700b110fbadfb685c/seed1.png')">
+      <div class="sample-image-item" onclick="loadSampleImageTest(1)">
         <img src="https://github.com/farmeryi/coloring-game/raw/5f97cd68ce2b0dcd008401d700b110fbadfb685c/seed1.png" alt="範例圖片 1" class="sample-thumbnail">
         <span class="sample-label">範例 1</span>
       </div>
-      <div class="sample-image-item" onclick="loadSampleImage('https://github.com/farmeryi/coloring-game/raw/5f97cd68ce2b0dcd008401d700b110fbadfb685c/seed2.png')">
+      <div class="sample-image-item" onclick="loadSampleImageTest(2)">
         <img src="https://github.com/farmeryi/coloring-game/raw/5f97cd68ce2b0dcd008401d700b110fbadfb685c/seed2.png" alt="範例圖片 2" class="sample-thumbnail">
         <span class="sample-label">範例 2</span>
       </div>
@@ -843,26 +843,18 @@ window.addEventListener('load', function() {
   saveHistory();
   
   // 確保畫布可見
-  console.log('Canvas 初始化狀態:', {
-    bgCanvas: bgCanvas ? '✓' : '✗',
-    drawCanvas: drawCanvas ? '✓' : '✗',
-    overlayCanvas: overlayCanvas ? '✓' : '✗',
-    overlayCanvasSize: `${overlayCanvas.width}x${overlayCanvas.height}`
+  console.log('Canvas elements:', {
+    bgCanvas: bgCanvas,
+    drawCanvas: drawCanvas,
+    overlayCanvas: overlayCanvas,
+    bgCanvasStyle: bgCanvas.style.cssText,
+    drawCanvasStyle: drawCanvas.style.cssText
   });
   
-  // 測試範例圖片網址
-  const testUrls = [
-    'https://github.com/farmeryi/coloring-game/raw/5f97cd68ce2b0dcd008401d700b110fbadfb685c/seed1.png',
-    'https://github.com/farmeryi/coloring-game/raw/5f97cd68ce2b0dcd008401d700b110fbadfb685c/seed2.png'
-  ];
-  
-  console.log('範例圖片網址:');
-  testUrls.forEach((url, index) => {
-    console.log(`範例 ${index + 1}:`, url);
-  });
-  
-  // 測試載入第一個範例圖片（僅用於測試）
-  console.log('系統準備完成，可以點選範例圖片進行測試');
+  // 測試範例圖片載入
+  console.log('範例圖片網址測試:');
+  console.log('seed1:', 'https://raw.githubusercontent.com/farmeryi/coloring-game/5f97cd68ce2b0dcd008401d700b110fbadfb685c/seed1.png');
+  console.log('seed2:', 'https://raw.githubusercontent.com/farmeryi/coloring-game/5f97cd68ce2b0dcd008401d700b110fbadfb685c/seed2.png');
 });
 
 // 觸控事件處理
