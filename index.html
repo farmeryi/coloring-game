@@ -292,11 +292,11 @@
     <div class="section-title">範例圖片</div>
     <div class="sample-images-container">
       <div class="sample-image-item" onclick="loadSampleImage('https://raw.githubusercontent.com/farmeryi/coloring-game/5f97cd68ce2b0dcd008401d700b110fbadfb685c/seed1.png')">
-        <img src="https://raw.githubusercontent.com/farmeryi/coloring-game/5f97cd68ce2b0dcd008401d700b110fbadfb685c/seed1.png" alt="範例圖片 1" class="sample-thumbnail" loading="lazy">
+        <img src="https://raw.githubusercontent.com/farmeryi/coloring-game/5f97cd68ce2b0dcd008401d700b110fbadfb685c/seed1.png" alt="範例圖片 1" class="sample-thumbnail">
         <span class="sample-label">範例 1</span>
       </div>
       <div class="sample-image-item" onclick="loadSampleImage('https://raw.githubusercontent.com/farmeryi/coloring-game/5f97cd68ce2b0dcd008401d700b110fbadfb685c/seed2.png')">
-        <img src="https://raw.githubusercontent.com/farmeryi/coloring-game/5f97cd68ce2b0dcd008401d700b110fbadfb685c/seed2.png" alt="範例圖片 2" class="sample-thumbnail" loading="lazy">
+        <img src="https://raw.githubusercontent.com/farmeryi/coloring-game/5f97cd68ce2b0dcd008401d700b110fbadfb685c/seed2.png" alt="範例圖片 2" class="sample-thumbnail">
         <span class="sample-label">範例 2</span>
       </div>
     </div>
@@ -745,6 +745,15 @@ function clearBackground(){
 function clearOverlay(){
   overlayImage = null;
   redrawOverlay();
+  
+  // 清除範例圖片的選中狀態
+  const items = document.querySelectorAll('.sample-image-item');
+  items.forEach(item => {
+    item.style.borderColor = 'transparent';
+    item.style.backgroundColor = '';
+  });
+  
+  console.log('已清除去背層和範例圖片選中狀態');
 }
 
 // 重新繪製背景
@@ -841,6 +850,11 @@ window.addEventListener('load', function() {
     bgCanvasStyle: bgCanvas.style.cssText,
     drawCanvasStyle: drawCanvas.style.cssText
   });
+  
+  // 測試範例圖片載入
+  console.log('範例圖片網址測試:');
+  console.log('seed1:', 'https://raw.githubusercontent.com/farmeryi/coloring-game/5f97cd68ce2b0dcd008401d700b110fbadfb685c/seed1.png');
+  console.log('seed2:', 'https://raw.githubusercontent.com/farmeryi/coloring-game/5f97cd68ce2b0dcd008401d700b110fbadfb685c/seed2.png');
 });
 
 // 觸控事件處理
