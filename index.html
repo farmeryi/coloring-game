@@ -747,11 +747,7 @@ function clearOverlay(){
   redrawOverlay();
   
   // 清除範例圖片的選中狀態
-  const items = document.querySelectorAll('.sample-image-item');
-  items.forEach(item => {
-    item.style.borderColor = 'transparent';
-    item.style.backgroundColor = '';
-  });
+  clearSampleSelection();
   
   console.log('已清除去背層和範例圖片選中狀態');
 }
