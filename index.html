@@ -297,15 +297,16 @@
   </div>
   
   <div class="upload-section">
-    <div class="layer-info">圖層順序(底-上)：背景圖 → 畫筆繪圖 → png檔(去背圖)</div>
+    <div class="section-title">上傳自己想畫的圖~</div>
+    <div class="layer-info">圖層順序(底-上)：背景圖 → 畫筆繪圖 → 去背圖(png檔)</div>
     <input type="file" id="uploadBg" accept="image/*" style="display:none" onchange="uploadBackgroundImage(event)">
     <button class="upload-btn bg" onclick="document.getElementById('uploadBg').click()">上傳背景圖</button>
     
     <input type="file" id="uploadOverlay" accept="image/*" style="display:none" onchange="uploadOverlayImage(event)">
-    <button class="upload-btn" onclick="document.getElementById('uploadOverlay').click()">上傳png檔</button>
+    <button class="upload-btn" onclick="document.getElementById('uploadOverlay').click()">上傳去背圖</button>
     
     <button class="upload-btn bg" onclick="clearBackground()">清除背景圖</button>
-    <button class="upload-btn" onclick="clearOverlay()">清除png檔</button>
+    <button class="upload-btn" onclick="clearOverlay()">清除去背圖</button>
   </div>
 
   <div class="controls" id="colorPalette"></div>
