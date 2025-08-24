@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Canvas 繪圖工具 RWD 修正版</title>
+<title>塗色遊戲</title>
 <style>
   body { 
     margin: 0; 
@@ -260,18 +260,18 @@
 <body>
 
 <div class="header">
-  <h2>Canvas 繪圖工具</h2>
+  <h2>一起來塗色吧！</h2>
   
   <div class="upload-section">
-    <div class="layer-info">圖層順序：背景圖 → 畫筆繪圖 → 去背圖（最上層）</div>
+    <div class="layer-info">圖層順序(底-上)：背景圖 → 畫筆繪圖 → png檔(去背圖)</div>
     <input type="file" id="uploadBg" accept="image/*" style="display:none" onchange="uploadBackgroundImage(event)">
     <button class="upload-btn bg" onclick="document.getElementById('uploadBg').click()">上傳背景圖</button>
     
     <input type="file" id="uploadOverlay" accept="image/*" style="display:none" onchange="uploadOverlayImage(event)">
-    <button class="upload-btn" onclick="document.getElementById('uploadOverlay').click()">上傳去背圖（推薦PNG）</button>
+    <button class="upload-btn" onclick="document.getElementById('uploadOverlay').click()">上傳png檔</button>
     
-    <button class="upload-btn" onclick="clearBackground()">清除背景</button>
-    <button class="upload-btn" onclick="clearOverlay()">清除去背圖</button>
+    <button class="upload-btn" onclick="clearBackground()">清除背景圖</button>
+    <button class="upload-btn" onclick="clearOverlay()">清除png檔</button>
   </div>
 
   <div class="controls" id="colorPalette"></div>
@@ -285,7 +285,7 @@
     <button class="control-btn" onclick="undo()">復原</button>
     <button class="control-btn" onclick="redo()">重做</button>
     <button class="control-btn" onclick="clearDraw()">清除畫筆</button>
-    <button class="control-btn" onclick="downloadCanvas()">下載合成圖</button>
+    <button class="control-btn" onclick="downloadCanvas()">下載成品</button>
   </div>
 
   <div class="sample-images-section">
@@ -876,7 +876,12 @@ function loadSampleImageTest(imageId) {
   // 定義範例圖片網址
   const imageUrls = {
     1: 'https://i.postimg.cc/m25CXL6w/seed1.png',
-    2: 'https://i.postimg.cc/prnyx8wq/seed2.png'
+    2: 'https://i.postimg.cc/prnyx8wq/seed2.png',
+    3: 'https://i.postimg.cc/Px7NBKRC/seed3.png',
+    4: 'https://i.postimg.cc/d04h9JRm/seed4.png',
+    5: 'https://i.postimg.cc/XXSqvq33/seed5.png',
+    6: 'https://i.postimg.cc/WpQwZ71p/seed6.png',
+    7: 'https://i.postimg.cc/h4J0hYg3/seed7.png'
   };
   
   const imageUrl = imageUrls[imageId];
