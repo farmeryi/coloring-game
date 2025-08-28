@@ -976,11 +976,11 @@ function downloadCanvas(){
     console.log('合併背景層...');
     tempCtx.drawImage(bgCanvas, 0, 0);
     
-    console.log('合併覆蓋層（範例圖片）...');  
-    tempCtx.drawImage(overlayCanvas, 0, 0);
-    
     console.log('合併繪圖層...');
     tempCtx.drawImage(drawCanvas, 0, 0);
+    
+    console.log('合併覆蓋層（範例圖片）...');  
+    tempCtx.drawImage(overlayCanvas, 0, 0);
     
     // 嘗試生成下載連結
     const dataURL = tempCanvas.toDataURL("image/png");
