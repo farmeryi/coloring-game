@@ -395,12 +395,16 @@ let canvasOffsetY = 0;
 let minScale = 0.5;
 let maxScale = 3;
 
-// 更新畫布變換
+// 更新畫布變換 - 防止內容重置
 function updateCanvasTransform() {
   const transform = `translate(${canvasOffsetX}px, ${canvasOffsetY}px) scale(${canvasScale})`;
+  
   [bgCanvas, drawCanvas, overlayCanvas].forEach(canvas => {
     canvas.style.transform = transform;
   });
+  
+  // 重要：不要在這裡調用重繪函數
+  // 移除任何 redraw 相關的調用
 }
 
 // 響應式畫布調整 - 支援高解析度
@@ -495,7 +499,7 @@ function getTouchCenter(touch1, touch2) {
   };
 }
 
-// 觸控與滑鼠事件 - 修正拖移後的座標偏移
+// 觸控與滑鼠事件 - 完全修正版本
 function getPos(e){
   const rect = drawCanvas.getBoundingClientRect();
   const isMobile = window.innerWidth <= 768;
@@ -510,16 +514,13 @@ function getPos(e){
     clientY = e.clientY;
   }
   
-  // 獲取Canvas的實際顯示位置（考慮transform）
-  const canvasRect = drawCanvas.getBoundingClientRect();
+  // 使用變換後的實際Canvas位置
+  const rectX = clientX - rect.left;
+  const rectY = clientY - rect.top;
   
-  // 計算相對於變換後Canvas的位置
-  const relativeX = clientX - canvasRect.left;
-  const relativeY = clientY - canvasRect.top;
-  
-  // 轉換為Canvas內部座標系統
-  const canvasX = relativeX / canvasScale;
-  const canvasY = relativeY / canvasScale;
+  // 轉換為Canvas內部座標（考慮縮放）
+  const canvasX = rectX / canvasScale;
+  const canvasY = rectY / canvasScale;
   
   return { x: canvasX, y: canvasY };
 }
@@ -576,8 +577,8 @@ function startDraw(e){
   }
 }
 
+// 雙指手勢的 draw 函數也需要修正
 function draw(e){
-  // 雙指手勢處理 - 縮放和拖動畫布
   if(e.touches && e.touches.length >= 2) {
     isPinching = true;
     multiTouchActive = true;
@@ -959,53 +960,53 @@ function clearOverlay(){
   console.log('已清除去背層和範例圖片選中狀態');
 }
 
-// 重新繪製背景
+
+// 確保畫布重繪函數正確
 function redrawBackground(){
-  const pixelRatio = window.devicePixelRatio || 1;
+  const isMobile = window.innerWidth <= 768;
+  const pixelRatio = isMobile ? (window.devicePixelRatio || 1) : 1;
   
-  // 重置變換並設置白色背景
-  bgCtx.save();
-  bgCtx.setTransform(1, 0, 0, 1, 0, 0);
   bgCtx.fillStyle = '#FFFFFF';
-  bgCtx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
-  bgCtx.restore();
+  bgCtx.fillRect(0, 0, bgCanvas.width / pixelRatio, bgCanvas.height / pixelRatio);
   
   if(bgImage) {
-    // 將圖片完全填滿畫布，保持比例
     try {
       bgCtx.drawImage(bgImage, 0, 0, bgCanvas.width / pixelRatio, bgCanvas.height / pixelRatio);
     } catch(e) {
-      alert('繪製背景圖片時發生錯誤！');
+      console.error('繪製背景圖片錯誤:', e);
     }
   }
 }
 
-// 重新繪製覆蓋層 - 支援高解析度
 function redrawOverlay(){
-  const pixelRatio = window.devicePixelRatio || 1;
+  const isMobile = window.innerWidth <= 768;
+  const pixelRatio = isMobile ? (window.devicePixelRatio || 1) : 1;
   
-  console.log('開始重新繪製覆蓋層（高解析度）...');
-  
-  // 重置變換並清除
-  overlayCtx.save();
-  overlayCtx.setTransform(1, 0, 0, 1, 0, 0);
   overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-  overlayCtx.restore();
   
   if(overlayImage) {
-    console.log('繪製覆蓋圖片到去背層（高解析度）');
-    
     try {
-      // 考慮像素比例繪製覆蓋圖
       overlayCtx.drawImage(overlayImage, 0, 0, overlayCanvas.width / pixelRatio, overlayCanvas.height / pixelRatio);
-      console.log('覆蓋圖片繪製完成（高解析度）');
-      
     } catch(e) {
-      console.error('繪製覆蓋圖片時發生錯誤:', e);
-      console.warn('圖片可能存在跨域限制，但仍可正常顯示和繪圖');
+      console.error('繪製覆蓋圖片錯誤:', e);
+    }
+  }
+}
+
+// 修正歷史記錄重繪
+function redrawDrawLayer(){
+  const isMobile = window.innerWidth <= 768;
+  const pixelRatio = isMobile ? (window.devicePixelRatio || 1) : 1;
+  
+  if(history.length > 0){
+    const img = new Image();
+    img.src = history[history.length-1];
+    img.onload = () => {
+      ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+      ctx.drawImage(img, 0, 0, drawCanvas.width / pixelRatio, drawCanvas.height / pixelRatio);
     }
   } else {
-    console.log('沒有覆蓋圖片需要繪製');
+    ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
   }
 }
 
@@ -1248,7 +1249,17 @@ document.addEventListener('touchmove', function(e) {
 }, {passive: false});
 
 // 觸控開始處理
+// 修正觸控事件處理 - 只處理畫布區域的觸控
+document.addEventListener('touchmove', function(e) {
+  // 只有當觸控目標是Canvas時才阻止預設行為
+  if(e.target.tagName === 'CANVAS') {
+    e.preventDefault();
+  }
+  // 其他區域不做任何處理，讓正常滾動功能運作
+}, {passive: false});
+
 document.addEventListener('touchstart', function(e) {
+  // 只處理Canvas上的觸控
   if(e.target.tagName === 'CANVAS') {
     e.preventDefault();
     if(e.touches.length >= 2) {
@@ -1256,27 +1267,26 @@ document.addEventListener('touchstart', function(e) {
       justFinishedMultiTouch = false;
     }
   }
+  // 非Canvas區域不做任何處理
 }, {passive: false});
 
-// 觸控結束處理
 document.addEventListener('touchend', function(e) {
+  // 只處理Canvas上的觸控結束事件
   if(e.target.tagName === 'CANVAS') {
     e.preventDefault();
     if(e.touches.length === 0) {
-      // 所有手指都離開了
       if(isPinching) {
-        // 剛結束雙指操作，設置保護期
         setTimeout(() => {
           justFinishedMultiTouch = false;
           multiTouchActive = false;
         }, 300);
       } else {
-        // 單指操作結束，立即重置
         multiTouchActive = false;
         justFinishedMultiTouch = false;
       }
     }
   }
+  // 非Canvas區域不做任何處理
 }, {passive: false});
 
 </script>
